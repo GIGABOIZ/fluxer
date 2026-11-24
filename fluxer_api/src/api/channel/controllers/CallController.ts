@@ -141,7 +141,13 @@ export function CallController(app: HonoApp) {
 			tags: 'Channels',
 		}),
 		async (ctx) => {
-			ctx.req.valid('param');
+			const channelId = createChannelID(ctx.req.valid('param').channel_id);
+			const gatewayService = ctx.get('gatewayService') as any;
+			if (typeof gatewayService.endCall === 'function') {
+				await gatewayService.endCall(channelId);
+			} else {
+				await gatewayService.stopRingingCallRecipients(channelId, []);
+			}
 			return ctx.body(null, 204);
 		},
 	);

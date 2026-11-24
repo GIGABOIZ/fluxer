@@ -52,7 +52,9 @@ import { LimitConfigService } from './api/limits/LimitConfigService';
 import { setInjectedSearchProvider } from './api/SearchFactory';
 import { resetApiServicesForTesting } from './api/CreateApiContext';
 import { AdminACLs } from '@fluxer/constants/src/AdminACLs';
-import { createUserID } from './api/BrandedTypes';
+import { AUTOMATIC_VOICE_REGION_ID } from '@fluxer/constants/src/ChannelConstants';
+import { createUserID, createChannelID, createGuildID } from './api/BrandedTypes';
+import type { CallData, CallCaller } from './api/infrastructure/IGatewayService';
 import { hashPassword } from './api/utils/PasswordUtils';
 import { EMPTY_USER_ROW, type UserRow } from './api/database/types/UserTypes';
 import { setInjectedSnowflakeService } from './api/middleware/ServiceRegistry';
@@ -183,6 +185,87 @@ interface StoredPresence {
 
 const userSockets = new Map<string, Set<any>>();
 const userPresences = new Map<string, StoredPresence>();
+
+// Real-time Voice, Mesh WebRTC, and DM Calling State
+const activeVoiceStates = new Map<string, Map<string, any>>(); // channelId -> Map<connectionId, VoiceState>
+const connectionToChannel = new Map<string, { channelId: string; guildId: string | null; userId: string }>();
+const userVoiceConnections = new Map<string, string>(); // userId -> connectionId
+const activeCalls = new Map<string, CallData>(); // channelId -> CallData
+
+function broadcastCallEvent(recipients: string[], event: string, data: any) {
+	const payload = JSON.stringify({
+		op: 0,
+		s: 1,
+		t: event,
+		d: data,
+	});
+	for (const recipientId of recipients) {
+		const sockets = userSockets.get(recipientId);
+		if (sockets) {
+			for (const sock of sockets) {
+				try {
+					if (sock.readyState === 1) {
+						sock.send(payload);
+						Logger.info({ recipientId, event }, '[Gateway] Dispatched call event to client');
+					}
+				} catch (e) {
+					Logger.warn({ error: e }, '[Gateway] Failed to dispatch call event');
+				}
+			}
+		}
+	}
+}
+
+async function broadcastVoiceState(voiceState: any, guildId: string | null, channelId: string) {
+	const payload = JSON.stringify({
+		op: 0,
+		s: 1,
+		t: 'VOICE_STATE_UPDATE',
+		d: voiceState,
+	});
+
+	if (guildId) {
+		try {
+			const guildRepo = getGuildRepository();
+			const members = await guildRepo.listMembers(createGuildID(BigInt(guildId)));
+			for (const m of members) {
+				const mUserId = m.userId.toString();
+				const sockets = userSockets.get(mUserId);
+				if (sockets) {
+					for (const sock of sockets) {
+						if (sock.readyState === 1) sock.send(payload);
+					}
+				}
+			}
+		} catch (e) {
+			Logger.warn({ error: e, guildId }, '[Gateway] Failed to broadcast voice state to guild');
+		}
+	} else {
+		try {
+			const { ChannelDataRepository } = await import('./api/channel/repositories/ChannelDataRepository');
+			const channelRepo = new ChannelDataRepository();
+			const ch = await channelRepo.findUnique(createChannelID(BigInt(channelId)));
+			const recipientSet = new Set<string>();
+			if (ch && ch.recipientIds) {
+				for (const r of ch.recipientIds) recipientSet.add(r.toString());
+			}
+			const call = activeCalls.get(channelId);
+			if (call && call.recipients) {
+				for (const r of call.recipients) recipientSet.add(r);
+			}
+			for (const recipientId of recipientSet) {
+				const sockets = userSockets.get(recipientId);
+				if (sockets) {
+					for (const sock of sockets) {
+						if (sock.readyState === 1) sock.send(payload);
+					}
+				}
+			}
+		} catch (e) {
+			Logger.warn({ error: e, channelId }, '[Gateway] Failed to broadcast voice state to DM');
+		}
+	}
+}
 
 function broadcastToAll(event: string, data: any) {
 	const payload = JSON.stringify({
@@ -407,11 +490,116 @@ async function buildGuildReadyData(guildId: GuildID, userId: UserID): Promise<an
 		unavailable: false,
 		threads: [],
 		presences: guildPresences,
-		voice_states: [],
+		voice_states: Array.from(activeVoiceStates.entries()).flatMap(([chId, channelStates]) => {
+			const guildChannelIds = new Set(channels.map((ch) => ch.id.toString()));
+			if (guildChannelIds.has(chId)) {
+				return Array.from(channelStates.values());
+			}
+			return [];
+		}),
 	};
 }
 
 class DevGatewayService extends NoopGatewayService {
+	override async getCall(channelId: ChannelID): Promise<CallData | null> {
+		return activeCalls.get(channelId.toString()) ?? null;
+	}
+
+	override async createCall(
+		channelId: ChannelID,
+		messageId: string,
+		region: string,
+		ringing: Array<string>,
+		recipients: Array<string>,
+		caller?: CallCaller,
+	): Promise<CallData> {
+		const channelIdStr = channelId.toString();
+		const call: CallData = {
+			channel_id: channelIdStr,
+			message_id: messageId,
+			region: region || AUTOMATIC_VOICE_REGION_ID,
+			ringing,
+			recipients,
+			voice_states: [],
+		};
+		activeCalls.set(channelIdStr, call);
+		broadcastCallEvent(recipients, 'CALL_CREATE', {
+			channel_id: channelIdStr,
+			message_id: messageId,
+			region: call.region,
+			ringing,
+			voice_states: [],
+		});
+		return call;
+	}
+
+	override async updateCallRegion(channelId: ChannelID, region: string | null): Promise<boolean> {
+		const channelIdStr = channelId.toString();
+		const call = activeCalls.get(channelIdStr);
+		if (!call) return false;
+		call.region = region ?? AUTOMATIC_VOICE_REGION_ID;
+		broadcastCallEvent(call.recipients, 'CALL_UPDATE', {
+			channel_id: call.channel_id,
+			message_id: call.message_id,
+			region: call.region,
+			ringing: call.ringing,
+			voice_states: call.voice_states,
+		});
+		return true;
+	}
+
+	override async ringCallRecipients(
+		channelId: ChannelID,
+		recipients: Array<string>,
+		caller?: CallCaller,
+	): Promise<boolean> {
+		const channelIdStr = channelId.toString();
+		const call = activeCalls.get(channelIdStr);
+		if (!call) return false;
+		const ringingSet = new Set(call.ringing);
+		for (const r of recipients) ringingSet.add(r);
+		call.ringing = Array.from(ringingSet);
+		broadcastCallEvent(call.recipients, 'CALL_UPDATE', {
+			channel_id: call.channel_id,
+			message_id: call.message_id,
+			region: call.region,
+			ringing: call.ringing,
+			voice_states: call.voice_states,
+		});
+		return true;
+	}
+
+	override async stopRingingCallRecipients(
+		channelId: ChannelID,
+		recipients: Array<string>,
+	): Promise<boolean> {
+		const channelIdStr = channelId.toString();
+		const call = activeCalls.get(channelIdStr);
+		if (!call) return false;
+		if (!recipients || recipients.length === 0) {
+			call.ringing = [];
+		} else {
+			const removeSet = new Set(recipients);
+			call.ringing = call.ringing.filter((r) => !removeSet.has(r));
+		}
+		broadcastCallEvent(call.recipients, 'CALL_UPDATE', {
+			channel_id: call.channel_id,
+			message_id: call.message_id,
+			region: call.region,
+			ringing: call.ringing,
+			voice_states: call.voice_states,
+		});
+		return true;
+	}
+
+	async endCall(channelId: ChannelID): Promise<void> {
+		const channelIdStr = channelId.toString();
+		const call = activeCalls.get(channelIdStr);
+		if (call) {
+			activeCalls.delete(channelIdStr);
+			broadcastCallEvent(call.recipients, 'CALL_DELETE', { channel_id: channelIdStr });
+		}
+	}
 	override async joinGuild(params: { userId: UserID; guildId: GuildID }): Promise<void> {
 		await super.joinGuild(params);
 		try {
@@ -733,6 +921,23 @@ function setupGatewayWebSocket(httpServer: any) {
 						false,
 						mapUserToPartialResponse(user),
 					);
+					// Sync any active calls where this user is a participant or ringing recipient
+					for (const call of activeCalls.values()) {
+						if (call.recipients.includes(user.id.toString())) {
+							ws.send(JSON.stringify({
+								op: 0,
+								s: 1,
+								t: 'CALL_CREATE',
+								d: {
+									channel_id: call.channel_id,
+									message_id: call.message_id,
+									region: call.region,
+									ringing: call.ringing,
+									voice_states: call.voice_states,
+								},
+							}));
+						}
+					}
 				} else if (payload.op === 3) { // PRESENCE_UPDATE from client
 					if (currentIdentifiedUserId) {
 						const d = payload.d || {};
@@ -757,13 +962,235 @@ function setupGatewayWebSocket(httpServer: any) {
 							u ? mapUserToPartialResponse(u) : { id: currentIdentifiedUserId },
 						);
 					}
+				} else if (payload.op === 4) { // VOICE_STATE_UPDATE
+					if (!currentIdentifiedUserId) return;
+					const d = payload.d || {};
+					const guildId = d.guild_id ? d.guild_id.toString() : null;
+					const channelId = d.channel_id ? d.channel_id.toString() : null;
+
+					let connectionId = d.connection_id || userVoiceConnections.get(currentIdentifiedUserId);
+					if (!connectionId) {
+						connectionId = `conn_${currentIdentifiedUserId}_${Date.now()}`;
+					}
+					userVoiceConnections.set(currentIdentifiedUserId, connectionId);
+
+					const prevChannel = connectionToChannel.get(connectionId);
+
+					// Disconnect from previous channel if moving or disconnecting
+					if (prevChannel && prevChannel.channelId !== channelId) {
+						const prevStates = activeVoiceStates.get(prevChannel.channelId);
+						if (prevStates) {
+							prevStates.delete(connectionId);
+							if (prevStates.size === 0) {
+								activeVoiceStates.delete(prevChannel.channelId);
+							}
+						}
+						connectionToChannel.delete(connectionId);
+
+						const leaveVoiceState = {
+							guild_id: prevChannel.guildId,
+							channel_id: null,
+							user_id: currentIdentifiedUserId,
+							connection_id: connectionId,
+							session_id: 'sync_sess_' + currentIdentifiedUserId,
+							deaf: true,
+							mute: true,
+							self_deaf: true,
+							self_mute: true,
+							self_video: false,
+							self_stream: false,
+							suppress: false,
+						};
+
+						await broadcastVoiceState(leaveVoiceState, prevChannel.guildId, prevChannel.channelId);
+
+						const prevCall = activeCalls.get(prevChannel.channelId);
+						if (prevCall) {
+							prevCall.voice_states = prevCall.voice_states.filter(
+								(vs: any) => vs.user_id !== currentIdentifiedUserId,
+							);
+							if (prevCall.voice_states.length === 0 && prevCall.ringing.length === 0) {
+								activeCalls.delete(prevChannel.channelId);
+								broadcastCallEvent(prevCall.recipients, 'CALL_DELETE', { channel_id: prevChannel.channelId });
+							} else {
+								broadcastCallEvent(prevCall.recipients, 'CALL_UPDATE', {
+									channel_id: prevCall.channel_id,
+									message_id: prevCall.message_id,
+									region: prevCall.region,
+									ringing: prevCall.ringing,
+									voice_states: prevCall.voice_states,
+								});
+							}
+						}
+					}
+
+					if (channelId) {
+						connectionToChannel.set(connectionId, {
+							channelId,
+							guildId,
+							userId: currentIdentifiedUserId,
+						});
+
+						const users = getUserRepository();
+						const userObj = await users.findUnique(createUserID(BigInt(currentIdentifiedUserId)));
+
+						let guildMember: any = undefined;
+						if (guildId) {
+							try {
+								const guildRepo = getGuildRepository();
+								const member = await guildRepo.getMember(
+									createGuildID(BigInt(guildId)),
+									createUserID(BigInt(currentIdentifiedUserId)),
+								);
+								if (member && userObj) {
+									guildMember = {
+										user: mapUserToPartialResponse(userObj),
+										nick: member.nick ?? null,
+										avatar: member.avatarHash ?? null,
+										roles: member.roleIds ? Array.from(member.roleIds).map((r) => r.toString()) : [],
+										joined_at: member.joinedAt ? member.joinedAt.toISOString() : new Date().toISOString(),
+										deaf: member.deaf ?? false,
+										mute: member.mute ?? false,
+										flags: member.profileFlags ?? 0,
+										pending: false,
+									};
+								}
+							} catch {}
+						}
+
+						const voiceState = {
+							guild_id: guildId,
+							channel_id: channelId,
+							user_id: currentIdentifiedUserId,
+							connection_id: connectionId,
+							session_id: 'sync_sess_' + currentIdentifiedUserId,
+							deaf: !!d.self_deaf,
+							mute: !!d.self_mute,
+							self_deaf: !!d.self_deaf,
+							self_mute: !!d.self_mute,
+							self_video: !!d.self_video,
+							self_stream: !!d.self_stream,
+							suppress: false,
+							request_to_speak_timestamp: null,
+							p2p: true,
+							member: guildMember,
+						};
+
+						let channelStates = activeVoiceStates.get(channelId);
+						if (!channelStates) {
+							channelStates = new Map();
+							activeVoiceStates.set(channelId, channelStates);
+						}
+						channelStates.set(connectionId, voiceState);
+
+						// 1. Send VOICE_SERVER_UPDATE to client
+						ws.send(JSON.stringify({
+							op: 0,
+							s: 1,
+							t: 'VOICE_SERVER_UPDATE',
+							d: {
+								p2p: true,
+								connection_id: connectionId,
+								guild_id: guildId || undefined,
+								channel_id: channelId,
+								ice_servers: [
+									{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+								],
+							},
+						}));
+
+						// 2. Send all existing participants' voice states to this connecting client
+						for (const [otherConnId, otherState] of channelStates.entries()) {
+							if (otherConnId !== connectionId) {
+								ws.send(JSON.stringify({
+									op: 0,
+									s: 1,
+									t: 'VOICE_STATE_UPDATE',
+									d: otherState,
+								}));
+							}
+						}
+
+						// 3. Broadcast this user's voice state to all other participants
+						await broadcastVoiceState(voiceState, guildId, channelId);
+
+						// 4. Update DM call if channel has an active call
+						const activeCall = activeCalls.get(channelId);
+						if (activeCall) {
+							activeCall.ringing = activeCall.ringing.filter((r) => r !== currentIdentifiedUserId);
+							const existingVsIndex = activeCall.voice_states.findIndex(
+								(vs: any) => vs.user_id === currentIdentifiedUserId,
+							);
+							const callVs = {
+								user_id: currentIdentifiedUserId,
+								session_id: 'sync_sess_' + currentIdentifiedUserId,
+								mute: !!d.self_mute,
+								deaf: !!d.self_deaf,
+								self_mute: !!d.self_mute,
+								self_deaf: !!d.self_deaf,
+								self_video: !!d.self_video,
+								self_stream: !!d.self_stream,
+								suppress: false,
+							};
+							if (existingVsIndex >= 0) {
+								activeCall.voice_states[existingVsIndex] = callVs;
+							} else {
+								activeCall.voice_states.push(callVs);
+							}
+							broadcastCallEvent(activeCall.recipients, 'CALL_UPDATE', {
+								channel_id: activeCall.channel_id,
+								message_id: activeCall.message_id,
+								region: activeCall.region,
+								ringing: activeCall.ringing,
+								voice_states: activeCall.voice_states,
+							});
+						}
+					}
+				} else if (payload.op === 13) { // VOICE_SIGNAL
+					if (!currentIdentifiedUserId) return;
+					const d = payload.d || {};
+					const target = d.to;
+					if (!target) return;
+
+					const senderConnectionId = userVoiceConnections.get(currentIdentifiedUserId) || `conn_${currentIdentifiedUserId}`;
+
+					let targetUserId: string | null = null;
+					const targetConnMeta = connectionToChannel.get(target);
+					if (targetConnMeta) {
+						targetUserId = targetConnMeta.userId;
+					} else if (userSockets.has(target)) {
+						targetUserId = target;
+					}
+
+					if (targetUserId) {
+						const sockets = userSockets.get(targetUserId);
+						if (sockets) {
+							const signalPayload = JSON.stringify({
+								op: 0,
+								s: 1,
+								t: 'VOICE_SIGNAL',
+								d: {
+									guild_id: d.guild_id || undefined,
+									channel_id: d.channel_id,
+									from: senderConnectionId,
+									user_id: currentIdentifiedUserId,
+									data: d.data,
+								},
+							});
+							for (const sock of sockets) {
+								if (sock.readyState === 1) {
+									sock.send(signalPayload);
+								}
+							}
+						}
+					}
 				}
 			} catch (err) {
 				Logger.warn({ error: err }, '[Gateway] Error processing gateway message');
 			}
 		});
 
-		ws.on('close', (code: number, reason: any) => {
+		ws.on('close', async (code: number, reason: any) => {
 			if (currentIdentifiedUserId) {
 				const currentSet = userSockets.get(currentIdentifiedUserId);
 				if (currentSet) {
@@ -773,6 +1200,59 @@ function setupGatewayWebSocket(httpServer: any) {
 						userPresences.delete(currentIdentifiedUserId);
 						broadcastPresence(currentIdentifiedUserId, 'offline');
 						Logger.info({ userId: currentIdentifiedUserId }, '[Gateway] User went offline');
+					}
+				}
+
+				// Clean up any voice connection for this socket if no other socket is open for this user
+				const remainingSockets = userSockets.get(currentIdentifiedUserId);
+				if (!remainingSockets || remainingSockets.size === 0) {
+					const connId = userVoiceConnections.get(currentIdentifiedUserId);
+					if (connId) {
+						const connMeta = connectionToChannel.get(connId);
+						if (connMeta) {
+							const prevStates = activeVoiceStates.get(connMeta.channelId);
+							if (prevStates) {
+								prevStates.delete(connId);
+								if (prevStates.size === 0) activeVoiceStates.delete(connMeta.channelId);
+							}
+							connectionToChannel.delete(connId);
+
+							const leaveVoiceState = {
+								guild_id: connMeta.guildId,
+								channel_id: null,
+								user_id: currentIdentifiedUserId,
+								connection_id: connId,
+								session_id: 'sync_sess_' + currentIdentifiedUserId,
+								deaf: true,
+								mute: true,
+								self_deaf: true,
+								self_mute: true,
+								self_video: false,
+								self_stream: false,
+								suppress: false,
+							};
+							await broadcastVoiceState(leaveVoiceState, connMeta.guildId, connMeta.channelId);
+
+							const activeCall = activeCalls.get(connMeta.channelId);
+							if (activeCall) {
+								activeCall.voice_states = activeCall.voice_states.filter(
+									(vs: any) => vs.user_id !== currentIdentifiedUserId,
+								);
+								if (activeCall.voice_states.length === 0 && activeCall.ringing.length === 0) {
+									activeCalls.delete(connMeta.channelId);
+									broadcastCallEvent(activeCall.recipients, 'CALL_DELETE', { channel_id: connMeta.channelId });
+								} else {
+									broadcastCallEvent(activeCall.recipients, 'CALL_UPDATE', {
+										channel_id: activeCall.channel_id,
+										message_id: activeCall.message_id,
+										region: activeCall.region,
+										ringing: activeCall.ringing,
+										voice_states: activeCall.voice_states,
+									});
+								}
+							}
+						}
+						userVoiceConnections.delete(currentIdentifiedUserId);
 					}
 				}
 			}
