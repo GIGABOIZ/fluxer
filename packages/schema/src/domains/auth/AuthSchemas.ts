@@ -28,6 +28,8 @@ const RegisterThemeType = createNamedStringLiteralUnion(
 		[ThemeTypes.COAL, 'COAL', 'Coal/darker colour theme'],
 		[ThemeTypes.LIGHT, 'LIGHT', 'Light colour theme'],
 		[ThemeTypes.SYSTEM, 'SYSTEM', 'Follow system colour preference'],
+		[ThemeTypes.VISION_GLASS, 'VISION_GLASS', 'Spatial frosted dark glass theme'],
+		[ThemeTypes.MATCHA_CREAM, 'MATCHA_CREAM', 'Cute pastel matcha and marshmallow cream theme'],
 	] as const,
 	'UI theme preference',
 );

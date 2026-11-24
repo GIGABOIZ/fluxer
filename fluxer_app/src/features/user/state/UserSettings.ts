@@ -647,8 +647,8 @@ class UserSettingsState {
 		const localeToLoad = camelCaseSettings.locale ?? this.locale;
 		const normalizedLocale = applyLocaleChange(localeToLoad);
 		this.locale = normalizedLocale;
-		this.restrictedGuilds = [...camelCaseSettings.restrictedGuilds];
-		this.botRestrictedGuilds = [...camelCaseSettings.botRestrictedGuilds];
+		this.restrictedGuilds = [...(camelCaseSettings.restrictedGuilds ?? [])];
+		this.botRestrictedGuilds = [...(camelCaseSettings.botRestrictedGuilds ?? [])];
 		this.defaultGuildsRestricted = camelCaseSettings.defaultGuildsRestricted;
 		this.botDefaultGuildsRestricted = camelCaseSettings.botDefaultGuildsRestricted;
 		this.inlineAttachmentMedia = camelCaseSettings.inlineAttachmentMedia;
@@ -673,17 +673,17 @@ class UserSettingsState {
 			this.defaultShareVoiceActivity = camelCaseSettings.defaultShareVoiceActivity;
 		}
 		this.privacySetupVersion = camelCaseSettings.privacySetupVersion ?? null;
-		this.guildFolders = camelCaseSettings.guildFolders.map((folder) => ({
+		this.guildFolders = (camelCaseSettings.guildFolders ?? []).map((folder) => ({
 			...folder,
 			flags: folder.flags ?? 0,
 			icon: folder.icon ?? DEFAULT_GUILD_FOLDER_ICON,
-			guildIds: [...folder.guildIds],
+			guildIds: [...(folder.guildIds ?? [])],
 		}));
 		const newCustomStatus = normalizeCustomStatus(camelCaseSettings.customStatus ?? null);
 		this.customStatus = newCustomStatus ? {...newCustomStatus} : null;
 		this.afkTimeout = camelCaseSettings.afkTimeout;
 		if (camelCaseSettings.trustedDomains !== undefined) {
-			this.trustedDomains = [...camelCaseSettings.trustedDomains];
+			this.trustedDomains = [...(camelCaseSettings.trustedDomains ?? [])];
 		}
 		if (camelCaseSettings.defaultHideMutedChannels !== undefined) {
 			this.defaultHideMutedChannels = camelCaseSettings.defaultHideMutedChannels;
@@ -1182,6 +1182,9 @@ class UserSettingsState {
 				const currentSnapshot = this.snapshot;
 				const revertedSnapshot = {...currentSnapshot};
 				for (const key of Object.keys(sanitizedSettings) as Array<keyof UserSettings>) {
+					if (key === 'theme') {
+						continue;
+					}
 					restoreSettingValue(revertedSnapshot, previousSnapshot, key);
 				}
 				const revertedSnakeCase = convertKeysToSnakeCase<Record<string, unknown>>(revertedSnapshot);

@@ -807,8 +807,8 @@ class InvalidLoginCredentialsError extends Error {
 	}
 }
 
-function requireLoginCredential(value: string, field: 'token' | 'userId'): string {
-	if (value.trim().length === 0) {
+function requireLoginCredential(value: string | undefined | null, field: 'token' | 'userId'): string {
+	if (typeof value !== 'string' || value.trim().length === 0) {
 		throw new InvalidLoginCredentialsError(field);
 	}
 	return value;

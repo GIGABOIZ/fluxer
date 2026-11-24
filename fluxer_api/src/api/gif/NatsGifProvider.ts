@@ -15,6 +15,8 @@ import {
 import type {INatsConnectionManager} from '@pkgs/nats/src/INatsConnectionManager';
 import {NatsConnectionManager} from '@pkgs/nats/src/NatsConnectionManager';
 
+import type {IGifProvider} from '@app/api/gif/IGifProvider';
+
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
@@ -30,7 +32,7 @@ const GIF_PROVIDER_META: GifProviderMeta = {
 const KLIPY_SHARE_ORIGIN = 'https://klipy.com';
 const KLIPY_SHARE_HOSTS = new Set(['klipy.com', 'www.klipy.com']);
 
-type GifApiKeyResolver = () => Promise<string | null>;
+export type GifApiKeyResolver = () => Promise<string | null>;
 
 type NatsGifRequest =
 	| {op: 'IsAvailable'; api_key: string | null}
@@ -41,7 +43,7 @@ type NatsGifRequest =
 	| {op: 'RegisterShare'; api_key: string; id: string; q: string; locale: string; country: string}
 	| {op: 'ResolveByUrl'; api_key: string; url: string; locale: string; country: string};
 
-function extractKlipySlugFromUrl(rawUrl: string): string | null {
+export function extractKlipySlugFromUrl(rawUrl: string): string | null {
 	let parsed: URL;
 	try {
 		parsed = new URL(rawUrl);
@@ -68,7 +70,7 @@ function extractKlipySlugFromUrl(rawUrl: string): string | null {
 	}
 }
 
-function buildKlipyShareUrl(slug: string): string {
+export function buildKlipyShareUrl(slug: string): string {
 	const trimmed = slug.trim();
 	if (!trimmed) {
 		return `${KLIPY_SHARE_ORIGIN}/gifs`;
@@ -142,7 +144,7 @@ interface GifProviderMeta {
 	readonly attributionRequired: boolean;
 }
 
-export class NatsGifProvider {
+export class NatsGifProvider implements IGifProvider {
 	readonly meta = GIF_PROVIDER_META;
 
 	constructor(

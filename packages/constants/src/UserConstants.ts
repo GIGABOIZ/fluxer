@@ -227,6 +227,8 @@ export const ThemeTypes = {
 	COAL: 'coal',
 	LIGHT: 'light',
 	SYSTEM: 'system',
+	VISION_GLASS: 'vision_glass',
+	MATCHA_CREAM: 'matcha_cream',
 } as const;
 
 export type ThemeType = ValueOf<typeof ThemeTypes>;

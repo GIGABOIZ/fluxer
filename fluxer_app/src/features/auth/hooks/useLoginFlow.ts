@@ -181,8 +181,9 @@ export function useLoginFormController({
 		onSubmit: async (values) => {
 			const requestRuntimeSnapshot = requireLoginRuntimeSnapshot(runtimeSnapshot);
 			const identifier = values[identifierField] ?? '';
+			const trimmedIdentifier = typeof identifier === 'string' ? identifier.trim() : '';
 			const result = await loginWithPassword({
-				...(identifierField === 'login' ? {login: identifier.trim()} : {email: identifier}),
+				...(identifierField === 'login' ? {login: trimmedIdentifier} : {email: trimmedIdentifier}),
 				password: values.password,
 				inviteCode,
 				runtimeSnapshot: requestRuntimeSnapshot,

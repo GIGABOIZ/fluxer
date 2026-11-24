@@ -95,10 +95,21 @@ function parseRawMeta(cql: string): KvQueryMeta<Row> | null {
 }
 
 export class InMemoryCassandraQueryExecutor implements CassandraQueryExecutorForTesting {
-	private readonly tables = new Map<string, Map<string, Row>>();
+	protected readonly tables = new Map<string, Map<string, Row>>();
 	readonly executed: Array<KvQueryMeta> = [];
 	countStatements(statement: string): number {
 		return this.executed.filter((meta) => `${meta.action}:${meta.table.name}` === statement).length;
+	}
+
+	exportState(): Map<string, Map<string, Row>> {
+		return this.tables;
+	}
+
+	importState(state: Map<string, Map<string, Row>>): void {
+		this.tables.clear();
+		for (const [table, rows] of state.entries()) {
+			this.tables.set(table, new Map(rows));
+		}
 	}
 
 	reset(): void {

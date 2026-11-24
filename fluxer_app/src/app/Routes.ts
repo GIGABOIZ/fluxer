@@ -42,6 +42,7 @@ export const Routes = {
 	NOTIFICATIONS: '/notifications',
 	YOU: '/you',
 	REPORT: '/report',
+	ADMIN: '/admin',
 	PREMIUM_CALLBACK: '/premium-callback',
 	CONNECTION_CALLBACK: '/connection-callback',
 	USER_PROFILE: '/users/:userId',

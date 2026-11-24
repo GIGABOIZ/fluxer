@@ -387,7 +387,7 @@ export async function mapRelationshipToResponse(params: {
 		id: relationship.targetUserId.toString(),
 		type: relationship.type,
 		user: userPartial,
-		since: relationship.since?.toISOString(),
+		since: typeof relationship.since === 'string' ? relationship.since : relationship.since?.toISOString(),
 		nickname: relationship.nickname,
 		share_voice_activity: relationship.shareVoiceActivity,
 		friend_shares_voice_activity: inverse?.shareVoiceActivity ?? true,

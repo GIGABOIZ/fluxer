@@ -12,6 +12,7 @@ import type {Relationship} from '@app/features/relationship/models/Relationship'
 import {Scroller} from '@app/features/ui/components/Scroller';
 import Users from '@app/features/user/state/Users';
 import * as NicknameUtils from '@app/features/user/utils/NicknameUtils';
+import * as RelationshipCommands from '@app/features/relationship/commands/RelationshipCommands';
 import {RelationshipTypes} from '@fluxer/constants/src/UserConstants';
 import {msg} from '@lingui/core/macro';
 import {useLingui} from '@lingui/react/macro';
@@ -86,6 +87,9 @@ export const PendingFriendsView: React.FC<PendingFriendsViewProps> = observer(
 			hasSearch ? outgoingRequests.filter((request) => matchesSearch(request.id)) : outgoingRequests,
 		);
 		const visibleRowCount = visibleIncoming.length + visibleOutgoing.length;
+		useEffect(() => {
+			void RelationshipCommands.fetchRelationships();
+		}, []);
 		useEffect(() => {
 			if (hasSearch) {
 				return;

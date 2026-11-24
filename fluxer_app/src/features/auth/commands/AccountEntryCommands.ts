@@ -27,7 +27,10 @@ function localeHeaders(): Record<string, string> {
 	return {'Accept-Language': getCurrentOrDetectedLocale()};
 }
 
-function deviceProofForEmail(email: string): string | undefined {
+function deviceProofForEmail(email: string | undefined | null): string | undefined {
+	if (typeof email !== 'string') {
+		return undefined;
+	}
 	const normalized = email.trim().toLowerCase();
 	for (const account of switcherAccounts()) {
 		if (account.userData?.email?.toLowerCase() === normalized) {

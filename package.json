@@ -2,6 +2,7 @@
 	"name": "fluxer",
 	"private": true,
 	"scripts": {
+		"vercel-build": "pnpm --filter fluxer_app build",
 		"build": "cargo run -p fluxer-dev -- build",
 		"dev": "cargo run -p fluxer-dev -- dev",
 		"dev:bootstrap": "cargo run -p fluxer-dev -- bootstrap",
@@ -46,5 +47,8 @@
 		"typescript-eslint": "catalog:",
 		"vite": "catalog:"
 	},
-	"packageManager": "pnpm@11.27.0"
+	"packageManager": "pnpm@11.27.0",
+	"engines": {
+		"node": ">=20.0.0"
+	}
 }

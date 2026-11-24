@@ -67,6 +67,7 @@ export class ForegroundGatewayDispatchProcessor {
 				this.applyForegroundSnapshotEvent(account.key, account.userId, snapshotEvent);
 			}
 		} catch (error) {
+			console.error('[ForegroundGatewayDispatchProcessor] Dispatch failed for ' + delivery.type + ':', error);
 			socket.failDispatchProcessing(delivery.receipt, error);
 			return;
 		}

@@ -11,7 +11,21 @@ import {
 } from '@app/api/infrastructure/IStorageService';
 import {compareText} from '@app/api/utils/StringComparison';
 import {S3ServiceException} from '@aws-sdk/client-s3';
-import {vi} from 'vitest';
+// Safe mock helper for both vitest and standalone execution
+const createSpy = () => {
+	if (typeof globalThis !== 'undefined' && (globalThis as any).vi?.fn) {
+		return (globalThis as any).vi.fn();
+	}
+	const calls: any[][] = [];
+	const fn: any = (...args: any[]) => {
+		calls.push(args);
+	};
+	fn.mock = {calls};
+	fn.mockClear = () => {
+		calls.length = 0;
+	};
+	return fn;
+};
 
 const OBJECT_ID_SEPARATOR = '\u0000';
 const BYTE_RANGE_PATTERN = /^bytes=(\d*)-(\d*)$/u;
@@ -84,10 +98,10 @@ export class MockStorageService implements IStorageService {
 		destinationBucket: string;
 		destinationKey: string;
 	}> = [];
-	readonly uploadObjectSpy = vi.fn();
-	readonly deleteObjectSpy = vi.fn();
-	readonly readObjectSpy = vi.fn();
-	readonly getPresignedDownloadURLSpy = vi.fn();
+	readonly uploadObjectSpy = createSpy();
+	readonly deleteObjectSpy = createSpy();
+	readonly readObjectSpy = createSpy();
+	readonly getPresignedDownloadURLSpy = createSpy();
 	private config: MockStorageServiceConfig;
 
 	constructor(config: MockStorageServiceConfig = {}) {

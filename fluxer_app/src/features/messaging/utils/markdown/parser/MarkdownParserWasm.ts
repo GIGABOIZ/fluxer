@@ -111,7 +111,7 @@ function setWasmInstance(instance: WasmInstance): WasmExports {
 }
 
 export async function preloadMarkdownParserWasm(): Promise<void> {
-	if (wasm) return;
+	if (MARKDOWN_PARSER_WASM_BASE64.length < 1000 || wasm) return;
 	wasmModule ??= await WebAssembly.compile(decodeBase64(MARKDOWN_PARSER_WASM_BASE64));
 	const instance = await WebAssembly.instantiate(wasmModule, {});
 	if (!wasm) setWasmInstance(instance);
@@ -468,32 +468,233 @@ function mergeCleanedTextNodes(nodes: Array<Node>): void {
 	nodes.push(...merged);
 }
 
-export function parseMarkdownAstWithWasm(input: string, parserFlags: number): {nodes: Array<Node>} {
-	const inputBytes = passString(input);
-	const emojiContext = passString(buildEmojiContext(input));
-	const outPtr = alloc(RESULT_HEADER_BYTES);
-	try {
-		const status = getWasm().parse_markdown_ast(
-			inputBytes.ptr,
-			inputBytes.len,
-			parserFlags >>> 0,
-			emojiContext.ptr,
-			emojiContext.len,
-			outPtr,
-		);
-		const result = JSON.parse(readStringResult(outPtr)) as {nodes: Array<CleanableNode>};
-		if (status !== 0) throw new Error('markdown parser wasm call failed');
-		const nodes = result.nodes.map((node) => cleanNode(node));
-		mergeCleanedTextNodes(nodes);
-		flattenAST(nodes);
-		return {nodes};
-	} finally {
-		try {
-			free(inputBytes.ptr, inputBytes.len);
-			free(emojiContext.ptr, emojiContext.len);
-			free(outPtr, RESULT_HEADER_BYTES);
-		} finally {
-			releaseOversizedWasmMemory();
+let wasmFailed = MARKDOWN_PARSER_WASM_BASE64.length < 1000;
+
+function parseInlineMarkdown(text: string, flags: number): Array<Node> {
+	if (!text) return [];
+
+	const nodes: Array<Node> = [];
+	const pattern = /(?:`([^`\n]+)`|<(a)?:([a-zA-Z0-9_]+):(\d+)>|<@!?(\d+)>|<#(\d+)>|<@&(\d+)>|@(everyone|here)\b|\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)|(https?:\/\/[^\s<]+[^<.,:;"')\]\s])|\|\|([\s\S]+?)\|\||\*\*([\s\S]+?)\*\*|__([\s\S]+?)__|~~([\s\S]+?)~~|\*([^\*\n]+?)\*|_([^_\n]+?)_)/g;
+
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+
+	while ((match = pattern.exec(text)) !== null) {
+		if (match.index > lastIndex) {
+			nodes.push({ type: 'Text', content: text.slice(lastIndex, match.index) });
 		}
+		lastIndex = pattern.lastIndex;
+
+		if (match[1] !== undefined) {
+			nodes.push({ type: 'InlineCode', content: match[1] });
+		} else if (match[3] !== undefined && match[4] !== undefined) {
+			nodes.push({
+				type: 'Emoji',
+				kind: {
+					kind: 'Custom',
+					animated: Boolean(match[2]),
+					name: match[3],
+					id: match[4],
+				},
+			});
+		} else if (match[5] !== undefined) {
+			nodes.push({ type: 'Mention', kind: { kind: 'User', id: match[5] } });
+		} else if (match[6] !== undefined) {
+			nodes.push({ type: 'Mention', kind: { kind: 'Channel', id: match[6] } });
+		} else if (match[7] !== undefined) {
+			nodes.push({ type: 'Mention', kind: { kind: 'Role', id: match[7] } });
+		} else if (match[8] !== undefined) {
+			nodes.push({
+				type: 'Mention',
+				kind: match[8] === 'everyone' ? { kind: 'Everyone' } : { kind: 'Here' },
+			});
+		} else if (match[9] !== undefined && match[10] !== undefined) {
+			nodes.push({
+				type: 'Link',
+				url: match[10],
+				text: { type: 'Text', content: match[9] },
+				escaped: false,
+			});
+		} else if (match[11] !== undefined) {
+			nodes.push({
+				type: 'Link',
+				url: match[11],
+				text: { type: 'Text', content: match[11] },
+				escaped: false,
+			});
+		} else if (match[12] !== undefined) {
+			nodes.push({
+				type: 'Spoiler',
+				isBlock: false,
+				children: parseInlineMarkdown(match[12], flags),
+			});
+		} else if (match[13] !== undefined) {
+			nodes.push({
+				type: 'Strong',
+				children: parseInlineMarkdown(match[13], flags),
+			});
+		} else if (match[14] !== undefined) {
+			nodes.push({
+				type: 'Underline',
+				children: parseInlineMarkdown(match[14], flags),
+			});
+		} else if (match[15] !== undefined) {
+			nodes.push({
+				type: 'Strikethrough',
+				children: parseInlineMarkdown(match[15], flags),
+			});
+		} else if (match[16] !== undefined) {
+			nodes.push({
+				type: 'Emphasis',
+				children: parseInlineMarkdown(match[16], flags),
+			});
+		} else if (match[17] !== undefined) {
+			nodes.push({
+				type: 'Emphasis',
+				children: parseInlineMarkdown(match[17], flags),
+			});
+		}
+	}
+
+	if (lastIndex < text.length) {
+		nodes.push({ type: 'Text', content: text.slice(lastIndex) });
+	}
+
+	return nodes;
+}
+
+function parseMarkdownFallback(input: string, parserFlags: number): {nodes: Array<Node>} {
+	if (!input) return {nodes: []};
+
+	const lines = input.split(/\r?\n/);
+	const nodes: Array<Node> = [];
+	let currentText = '';
+
+	const flushText = () => {
+		if (currentText) {
+			nodes.push(...parseInlineMarkdown(currentText, parserFlags));
+			currentText = '';
+		}
+	};
+
+	let inCodeBlock = false;
+	let codeBlockLang = '';
+	let codeBlockLines: string[] = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+
+		if (line.startsWith('```')) {
+			if (!inCodeBlock) {
+				flushText();
+				inCodeBlock = true;
+				codeBlockLang = line.slice(3).trim();
+				codeBlockLines = [];
+				continue;
+			} else {
+				inCodeBlock = false;
+				nodes.push({
+					type: 'CodeBlock',
+					language: codeBlockLang || undefined,
+					content: codeBlockLines.join('\n'),
+				});
+				continue;
+			}
+		}
+
+		if (inCodeBlock) {
+			codeBlockLines.push(line);
+			continue;
+		}
+
+		if (line.startsWith('> ') || line === '>') {
+			flushText();
+			const bqContent = line.startsWith('> ') ? line.slice(2) : '';
+			nodes.push({
+				type: 'Blockquote',
+				children: parseInlineMarkdown(bqContent, parserFlags),
+			});
+			continue;
+		}
+
+		const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
+		if (headingMatch) {
+			flushText();
+			const level = headingMatch[1].length;
+			const headingText = headingMatch[2];
+			nodes.push({
+				type: 'Heading',
+				level,
+				children: parseInlineMarkdown(headingText, parserFlags),
+			});
+			continue;
+		}
+
+		if (line.startsWith('-# ')) {
+			flushText();
+			nodes.push({
+				type: 'Subtext',
+				children: parseInlineMarkdown(line.slice(3), parserFlags),
+			});
+			continue;
+		}
+
+		if (currentText.length > 0) {
+			currentText += '\n' + line;
+		} else {
+			currentText = line;
+		}
+	}
+
+	if (inCodeBlock) {
+		nodes.push({
+			type: 'CodeBlock',
+			language: codeBlockLang || undefined,
+			content: codeBlockLines.join('\n'),
+		});
+	} else {
+		flushText();
+	}
+
+	flattenAST(nodes);
+	return {nodes};
+}
+
+export function parseMarkdownAstWithWasm(input: string, parserFlags: number): {nodes: Array<Node>} {
+	if (!input) return {nodes: []};
+	if (wasmFailed) {
+		return parseMarkdownFallback(input, parserFlags);
+	}
+	try {
+		const inputBytes = passString(input);
+		const emojiContext = passString(buildEmojiContext(input));
+		const outPtr = alloc(RESULT_HEADER_BYTES);
+		try {
+			const status = getWasm().parse_markdown_ast(
+				inputBytes.ptr,
+				inputBytes.len,
+				parserFlags >>> 0,
+				emojiContext.ptr,
+				emojiContext.len,
+				outPtr,
+			);
+			const result = JSON.parse(readStringResult(outPtr)) as {nodes: Array<CleanableNode>};
+			if (status !== 0) throw new Error('markdown parser wasm call failed');
+			const nodes = result.nodes.map((node) => cleanNode(node));
+			mergeCleanedTextNodes(nodes);
+			flattenAST(nodes);
+			return {nodes};
+		} finally {
+			try {
+				free(inputBytes.ptr, inputBytes.len);
+				free(emojiContext.ptr, emojiContext.len);
+				free(outPtr, RESULT_HEADER_BYTES);
+			} finally {
+				releaseOversizedWasmMemory();
+			}
+		}
+	} catch (error) {
+		wasmFailed = true;
+		return parseMarkdownFallback(input, parserFlags);
 	}
 }

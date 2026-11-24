@@ -48,7 +48,7 @@ function deleteWindowStorageProperty(property: 'localStorage' | 'sessionStorage'
 }
 
 export function installBrowserStorageAccessProtection(): void {
-	if (browserStorageAccessProtected || !import.meta.env.PROD || typeof window === 'undefined') {
+	if (browserStorageAccessProtected || !import.meta.env?.PROD || typeof window === 'undefined') {
 		return;
 	}
 	browserStorageAccessProtected = true;

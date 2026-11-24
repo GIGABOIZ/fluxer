@@ -16,8 +16,8 @@ class BuildInfoInvariantError extends Error {
 }
 
 const parsedBuildInfo = v.safeParse(buildInfoSchema, {
-	BUILD_VERSION: import.meta.env.BUILD_VERSION,
-	BUILD_CHANNEL: import.meta.env.BUILD_CHANNEL,
+	BUILD_VERSION: import.meta.env?.BUILD_VERSION ?? 'dev',
+	BUILD_CHANNEL: import.meta.env?.BUILD_CHANNEL ?? 'development',
 });
 if (!parsedBuildInfo.success) {
 	throw new BuildInfoInvariantError(parsedBuildInfo.issues.map((issue) => issue.message).join(', '));

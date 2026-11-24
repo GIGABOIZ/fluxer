@@ -49,6 +49,22 @@ const USE_LIGHT_THEME_DESCRIPTOR = msg({
 	message: 'Use light theme',
 	comment: 'Short label in the theme tab content. Keep it concise.',
 });
+const VISION_GLASS_THEME_DESCRIPTOR = msg({
+	message: 'Vision Glass theme',
+	comment: 'Short label in the theme tab content. Keep it concise.',
+});
+const USE_VISION_GLASS_THEME_DESCRIPTOR = msg({
+	message: 'Use Vision Glass theme (spatial frosted translucent glass)',
+	comment: 'Label in the theme tab content.',
+});
+const MATCHA_CREAM_THEME_DESCRIPTOR = msg({
+	message: 'Matcha Cream theme',
+	comment: 'Short label in the theme tab content. Keep it concise.',
+});
+const USE_MATCHA_CREAM_THEME_DESCRIPTOR = msg({
+	message: 'Use Matcha Cream theme (cute pastel matcha & marshmallow)',
+	comment: 'Label in the theme tab content.',
+});
 
 const SYSTEM_DARK_THEME_AUTOMATICALLY_SYNC_WITH_YOUR_SYSTEM_DESCRIPTOR = msg({
 	message: "System: dark theme (automatically sync with your system's dark/light preference)",
@@ -113,6 +129,22 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = observer(({value, onC
 					isLight: true,
 					icon: null,
 					tooltip: i18n._(USE_LIGHT_THEME_DESCRIPTOR),
+				},
+				{
+					type: ThemeTypes.VISION_GLASS,
+					label: i18n._(VISION_GLASS_THEME_DESCRIPTOR),
+					backgroundColor: 'hsl(30, 18%, 15%)',
+					isLight: false,
+					icon: null,
+					tooltip: i18n._(USE_VISION_GLASS_THEME_DESCRIPTOR),
+				},
+				{
+					type: ThemeTypes.MATCHA_CREAM,
+					label: i18n._(MATCHA_CREAM_THEME_DESCRIPTOR),
+					backgroundColor: 'hsl(155, 38%, 92%)',
+					isLight: true,
+					icon: null,
+					tooltip: i18n._(USE_MATCHA_CREAM_THEME_DESCRIPTOR),
 				},
 				{
 					type: ThemeTypes.SYSTEM,

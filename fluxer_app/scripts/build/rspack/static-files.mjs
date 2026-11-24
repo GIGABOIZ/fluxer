@@ -26,16 +26,16 @@ const WASM_LICENSE_FILES = [
 
 function resolveStaticCdnEndpoint(staticCdnEndpoint) {
 	const value = staticCdnEndpoint?.trim().replace(/\/+$/, '');
-	return value || STATIC_CDN_ENDPOINT_PLACEHOLDER;
+	return value || '';
 }
 
 function generateManifest(staticCdnEndpoint) {
 	const cdn = resolveStaticCdnEndpoint(staticCdnEndpoint);
 	const manifest = {
-		name: 'Fluxer',
-		short_name: 'Fluxer',
+		name: 'SYNC',
+		short_name: 'SYNC',
 		description:
-			'Fluxer is a free and open source instant messaging and VoIP platform built for friends, groups, and communities.',
+			'SYNC is an independent, high-performance communication platform by GIGABOIZ.',
 		id: '/',
 		start_url: '/app',
 		display: 'standalone',

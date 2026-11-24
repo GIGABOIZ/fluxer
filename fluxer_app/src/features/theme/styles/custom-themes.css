@@ -1,0 +1,262 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* ==========================================================================
+   VISION GLASS THEME (.theme-vision_glass)
+   Inspired by Apple VisionOS / Spatial Computing UI
+   Frosted translucent glass, ambient room lighting, floating pills, warm amber glow
+   ========================================================================== */
+
+:root.theme-vision_glass,
+html.theme-vision_glass,
+.theme-vision_glass {
+	--background-primary: rgba(22, 25, 32, 0.78);
+	--background-secondary: rgba(18, 20, 26, 0.72);
+	--background-secondary-lighter: rgba(30, 34, 44, 0.75);
+	--background-secondary-alt: rgba(14, 16, 21, 0.82);
+	--background-tertiary: rgba(12, 14, 18, 0.85);
+	--background-channel-header: rgba(20, 23, 30, 0.75);
+	--guild-list-foreground: rgba(24, 27, 35, 0.82);
+	--background-header-secondary: rgba(18, 20, 26, 0.75);
+	--background-header-primary: rgba(20, 23, 30, 0.75);
+	--background-textarea: rgba(30, 34, 44, 0.8);
+	--background-header-primary-hover: rgba(42, 47, 60, 0.85);
+
+	/* Crisp High-Contrast Typography */
+	--text-primary: #ffffff !important;
+	--text-chat: #f5f6fa !important;
+	--text-secondary: #d4d9e3 !important;
+	--text-chat-muted: #9ba4b4 !important;
+	--text-primary-muted: #9ba4b4 !important;
+	--text-tertiary: #7c8596 !important;
+	--text-tertiary-secondary: #697282 !important;
+	--text-tertiary-muted: #575e6d !important;
+	--text-link: #e5a96c !important;
+
+	/* Spatial Amber / Warm Honey Accents */
+	--brand-primary: hsl(32, 75%, 62%);
+	--brand-secondary: hsl(32, 65%, 52%);
+	--brand-primary-light: hsl(32, 90%, 82%);
+	--brand-primary-fill: #ffffff;
+	--brand-primary-shade: #1a120b;
+	--brand-primary-pressed: hsl(32, 85%, 55%);
+	--brand-primary-foreground: hsl(32, 75%, 62%);
+	--brand-primary-light-fill: #ffffff;
+	--brand-tint: rgba(229, 169, 108, 0.16);
+	--brand-tint-hover: rgba(229, 169, 108, 0.28);
+	--brand-tint-border: #e5a96c;
+
+	/* Glass Overlays & Borders */
+	--background-modifier-hover: rgba(255, 255, 255, 0.08);
+	--background-modifier-selected: rgba(255, 255, 255, 0.14);
+	--background-modifier-accent: rgba(255, 255, 255, 0.18);
+	--background-modifier-accent-focus: rgba(255, 255, 255, 0.25);
+
+	--border-color: rgba(255, 255, 255, 0.12);
+	--border-color-hover: rgba(255, 255, 255, 0.22);
+	--border-color-focus: rgba(229, 169, 108, 0.6);
+
+	--glass-surface: rgba(255, 255, 255, 0.06);
+	--glass-surface-hover: rgba(255, 255, 255, 0.1);
+	--glass-surface-active: rgba(255, 255, 255, 0.14);
+	--glass-border: rgba(255, 255, 255, 0.15);
+	--glass-border-subtle: rgba(255, 255, 255, 0.08);
+
+	--panel-control-bg: rgba(30, 34, 44, 0.75);
+	--panel-control-border: rgba(255, 255, 255, 0.14);
+	--panel-control-divider: rgba(255, 255, 255, 0.1);
+	--panel-control-highlight: rgba(255, 255, 255, 0.08);
+
+	--control-button-normal-text: #d4d9e3;
+	--control-button-hover-bg: rgba(255, 255, 255, 0.12);
+	--control-button-hover-text: #ffffff;
+	--control-button-active-bg: rgba(255, 255, 255, 0.18);
+	--control-button-active-text: #ffffff;
+
+	--status-online: #34d399;
+	--status-idle: #fbbf24;
+	--status-dnd: #f87171;
+	--status-offline: #78716c;
+
+	--scrollbar-thumb-bg: rgba(255, 255, 255, 0.2);
+	--scrollbar-thumb-bg-hover: rgba(255, 255, 255, 0.38);
+
+	--shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+	--shadow-lg: 0 14px 40px 0 rgba(0, 0, 0, 0.55), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+
+	--form-surface-background: rgba(22, 25, 32, 0.85);
+	--message-preview-card-background: rgba(28, 32, 42, 0.85);
+	--composer-box-radius: 1.5rem;
+}
+
+html.theme-vision_glass,
+html.theme-vision_glass body {
+	background: radial-gradient(circle at 50% 12%, rgba(75, 58, 45, 0.45) 0%, rgba(20, 22, 28, 0.94) 55%, rgba(10, 11, 15, 0.98) 100%), #0d0f13 !important;
+	background-attachment: fixed !important;
+	color: var(--text-chat) !important;
+}
+
+/* Translucent Frosted Glass Panels */
+html.theme-vision_glass [data-flx*="guilds-layout"],
+html.theme-vision_glass nav,
+html.theme-vision_glass aside {
+	backdrop-filter: blur(28px) saturate(180%);
+	-webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+html.theme-vision_glass [class*="textareaArea"] {
+	backdrop-filter: blur(24px) saturate(180%);
+	-webkit-backdrop-filter: blur(24px) saturate(180%);
+	border-radius: var(--radius-xl);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Specular top border on dialogs and popout menus only (never on internal elements) */
+html.theme-vision_glass dialog,
+html.theme-vision_glass [role="dialog"]:not([class*="layerFullscreen"]):not([class*="focusLock"]),
+html.theme-vision_glass [role="menu"] {
+	backdrop-filter: blur(32px) saturate(190%);
+	-webkit-backdrop-filter: blur(32px) saturate(190%);
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+/* Settings sidebar reset - keep navigation items, subitems, and categories transparent and seamless */
+html.theme-vision_glass [class*="sidebarItem"],
+html.theme-vision_glass [class*="sidebarSubItem"],
+html.theme-vision_glass [class*="sidebarCategory"],
+html.theme-vision_glass [class*="sidebarCategoryTitle"],
+html.theme-vision_glass [class*="settingsItem"] {
+	border-color: transparent !important;
+	box-shadow: none !important;
+}
+
+
+/* ==========================================================================
+   MATCHA CREAM THEME (.theme-matcha_cream)
+   Inspired by Cute Pastel Mint & Marshmallow Cream UI
+   Soothing mint background aura, marshmallow white cards, matcha green accents
+   ========================================================================== */
+
+:root.theme-matcha_cream,
+html.theme-matcha_cream,
+.theme-matcha_cream {
+	--background-primary: #fcfdfd;
+	--background-secondary: #edf5f0;
+	--background-secondary-lighter: #f4faf6;
+	--background-secondary-alt: #e3efe7;
+	--background-tertiary: #deede4;
+	--background-channel-header: #fcfdfd;
+	--guild-list-foreground: #d7e8de;
+	--background-header-secondary: #edf5f0;
+	--background-header-primary: #fcfdfd;
+	--background-textarea: #f1f7f3;
+	--background-header-primary-hover: #e4f1ea;
+
+	/* Deep Forest Charcoal Typography - Ultra Readable */
+	--text-primary: #111d17 !important;
+	--text-chat: #162720 !important;
+	--text-secondary: #364f44 !important;
+	--text-chat-muted: #4e6f61 !important;
+	--text-primary-muted: #4e6f61 !important;
+	--text-tertiary: #6a8e7e !important;
+	--text-tertiary-secondary: #85a799 !important;
+	--text-tertiary-muted: #a0c0b2 !important;
+	--text-link: #1b7a4e !important;
+
+	/* Cute Matcha Green Accents */
+	--brand-primary: #279e66;
+	--brand-secondary: #1e8755;
+	--brand-primary-light: #69ce99;
+	--brand-primary-fill: #ffffff;
+	--brand-primary-shade: #0d3d25;
+	--brand-primary-pressed: #186b43;
+	--brand-primary-foreground: #279e66;
+	--brand-primary-light-fill: #ffffff;
+	--brand-tint: rgba(39, 158, 102, 0.12);
+	--brand-tint-hover: rgba(39, 158, 102, 0.22);
+	--brand-tint-border: #279e66;
+
+	/* Soft Mint Overlays & Borders */
+	--background-modifier-hover: rgba(39, 158, 102, 0.08);
+	--background-modifier-selected: rgba(39, 158, 102, 0.15);
+	--background-modifier-accent: rgba(39, 158, 102, 0.22);
+	--background-modifier-accent-focus: rgba(39, 158, 102, 0.3);
+
+	--border-color: rgba(39, 158, 102, 0.16);
+	--border-color-hover: rgba(39, 158, 102, 0.28);
+	--border-color-focus: #279e66;
+
+	--panel-control-bg: #edf5f0;
+	--panel-control-border: rgba(39, 158, 102, 0.2);
+	--panel-control-divider: rgba(39, 158, 102, 0.15);
+	--panel-control-highlight: rgba(39, 158, 102, 0.06);
+
+	--control-button-normal-text: #364f44;
+	--control-button-hover-bg: rgba(39, 158, 102, 0.12);
+	--control-button-hover-text: #111d17;
+	--control-button-active-bg: rgba(39, 158, 102, 0.2);
+	--control-button-active-text: #111d17;
+
+	--status-online: #279e66;
+	--status-idle: #eab308;
+	--status-dnd: #ef4444;
+	--status-offline: #94a3b8;
+
+	--scrollbar-thumb-bg: rgba(39, 158, 102, 0.25);
+	--scrollbar-thumb-bg-hover: rgba(39, 158, 102, 0.45);
+
+	--shadow-sm: 0 2px 8px rgba(39, 158, 102, 0.06);
+	--shadow-md: 0 8px 24px rgba(39, 158, 102, 0.09);
+	--shadow-lg: 0 16px 36px rgba(39, 158, 102, 0.12);
+
+	--button-primary-fill: #279e66;
+	--button-primary-active-fill: #1e8755;
+	--button-primary-text: #ffffff;
+	--button-secondary-fill: rgba(39, 158, 102, 0.12);
+	--button-secondary-active-fill: rgba(39, 158, 102, 0.2);
+	--button-secondary-text: #162720;
+
+	--form-surface-background: #ffffff;
+	--message-preview-card-background: #ffffff;
+	--message-preview-card-border: rgba(39, 158, 102, 0.14);
+	--composer-box-radius: 1.5rem;
+}
+
+html.theme-matcha_cream,
+html.theme-matcha_cream body {
+	background: linear-gradient(135deg, #cde3d7 0%, #d8eae0 50%, #c4ded2 100%) !important;
+	background-attachment: fixed !important;
+	color: var(--text-chat) !important;
+}
+
+html.theme-matcha_cream input,
+html.theme-matcha_cream textarea {
+	color-scheme: light;
+}
+
+/* Cute pill input styling */
+html.theme-matcha_cream [class*="textareaArea"] {
+	border-radius: var(--radius-2xl);
+	border: 1px solid rgba(39, 158, 102, 0.18);
+	box-shadow: 0 2px 12px rgba(39, 158, 102, 0.06);
+	background-color: #ffffff;
+}
+
+/* Marshmallow cards for dialogs and popout menus only (never on internal elements) */
+html.theme-matcha_cream dialog,
+html.theme-matcha_cream [role="dialog"]:not([class*="layerFullscreen"]):not([class*="focusLock"]),
+html.theme-matcha_cream [role="menu"] {
+	border-radius: var(--radius-xl);
+	border: 1px solid rgba(39, 158, 102, 0.16);
+	box-shadow: 0 14px 40px rgba(39, 158, 102, 0.12);
+}
+
+/* Settings sidebar reset - keep navigation items, subitems, and categories transparent and seamless */
+html.theme-matcha_cream [class*="sidebarItem"],
+html.theme-matcha_cream [class*="sidebarSubItem"],
+html.theme-matcha_cream [class*="sidebarCategory"],
+html.theme-matcha_cream [class*="sidebarCategoryTitle"],
+html.theme-matcha_cream [class*="settingsItem"] {
+	border-color: transparent !important;
+	box-shadow: none !important;
+}

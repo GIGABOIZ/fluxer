@@ -9,7 +9,7 @@ import {ThemeTypes} from '@fluxer/constants/src/UserConstants';
 export type ThemeBaseKind = 'dark' | 'light';
 
 export function getThemeBaseKind(effectiveTheme: string): ThemeBaseKind {
-	return effectiveTheme === ThemeTypes.LIGHT ? 'light' : 'dark';
+	return effectiveTheme === ThemeTypes.LIGHT || effectiveTheme === ThemeTypes.MATCHA_CREAM ? 'light' : 'dark';
 }
 
 export function getThemeDefaultVariables(baseTheme: ThemeBaseKind): Readonly<Record<string, string>> {

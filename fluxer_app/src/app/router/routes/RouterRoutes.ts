@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {adminRoute} from '@app/app/router/routes/AdminRoutes';
 import {appRouteTree, connectionCallbackRoute, premiumCallbackRoute} from '@app/app/router/routes/AppRoutes';
 import {authRouteTree} from '@app/app/router/routes/AuthRoutes';
 import {appRoute, homeRoute, notFoundRoute, rootRoute} from '@app/app/router/routes/RootRoutes';
@@ -11,6 +12,7 @@ const routeTree = rootRoute.addChildren([
 	notFoundRoute,
 	premiumCallbackRoute,
 	connectionCallbackRoute,
+	adminRoute,
 	authRouteTree,
 	appRouteTree,
 ]);

@@ -380,7 +380,7 @@ export const useNagbarConditions = (): NagbarConditions => {
 		canShowStreamerMode,
 		canShowDomainMoved,
 		canShowWindowsFont,
-		canShowCustomCssOff: ThemeSettingsState.customCssOff,
+		canShowCustomCssOff: false,
 	};
 };
 export const useActiveNagbars = (conditions: NagbarConditions): Array<NagbarState> => {

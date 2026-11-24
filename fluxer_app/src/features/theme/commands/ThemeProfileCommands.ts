@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {Logger} from '@app/features/platform/utils/AppLogger';
 import * as AccessibilityCommands from '@app/features/accessibility/commands/AccessibilityCommands';
 import AccountTheme from '@app/features/theme/state/AccountTheme';
 import AccountThemeMode from '@app/features/theme/state/AccountThemeMode';
@@ -10,23 +11,24 @@ import * as UserSettingsCommands from '@app/features/user/commands/UserSettingsC
 import type {ThemeType} from '@fluxer/constants/src/UserConstants';
 import {runInAction} from 'mobx';
 
+const logger = new Logger('ThemeProfileCommands');
+
 export function setThemePreference(theme: ThemeType, target: ThemeTarget): void {
 	if (target === 'desktop') {
 		InstallationTheme.setBaseTheme(theme);
 		return;
 	}
-	if (AccountTheme.syncAcrossDevices) {
-		void UserSettingsCommands.update({theme});
-		return;
-	}
 	AccountTheme.setTheme(theme);
+	InstallationTheme.setBaseTheme(theme);
+	if (AccountTheme.syncAcrossDevices) {
+		void UserSettingsCommands.update({theme}).catch((err) => {
+			logger.warn('Failed to sync theme preference to server', err);
+		});
+	}
 }
 
 export function setSignedOutThemePreference(theme: ThemeType): void {
-	if (AccountThemeMode.canUseDesktopTheme) {
-		InstallationTheme.setBaseTheme(theme);
-		return;
-	}
+	InstallationTheme.setBaseTheme(theme);
 	AccountTheme.setTheme(theme);
 }
 

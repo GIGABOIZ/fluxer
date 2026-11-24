@@ -139,6 +139,7 @@ function useAuthRuntimeResolution<Runtime>(
 			(runtime) => dispatch({type: 'resolved', attempt, runtime}),
 			(error: unknown) => {
 				if (!controller.signal.aborted) {
+					logger.error('Failed to resolve auth runtime:', error);
 					dispatch({type: 'failed', attempt, error});
 				}
 			},

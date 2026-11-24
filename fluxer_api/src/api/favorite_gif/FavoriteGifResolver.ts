@@ -2,7 +2,7 @@
 
 import {signAttachmentUrl} from '@app/api/attachment/AttachmentUrls';
 import {tryExtractGifProviderSlug} from '@app/api/gif/GifProviderUtils';
-import type {NatsGifProvider} from '@app/api/gif/NatsGifProvider';
+import type {IGifProvider} from '@app/api/gif/IGifProvider';
 import type {IMediaService, MediaProxyMetadataResponse} from '@app/api/infrastructure/IMediaService';
 import type {IUnfurlerService} from '@app/api/infrastructure/IUnfurlerService';
 import {Logger} from '@fluxer/logger/src/Logger';
@@ -52,7 +52,7 @@ export async function resolveFavoriteGifEntry({
 	url: string;
 	locale: string;
 	country: string;
-	gifService: NatsGifProvider;
+	gifService: IGifProvider;
 	mediaService: IMediaService;
 	unfurlerService: IUnfurlerService;
 }): Promise<ResolvedGifEntrySchema> {
@@ -80,7 +80,7 @@ async function resolveProviderGifUrl({
 	url: string;
 	locale: string;
 	country: string;
-	gifService: NatsGifProvider;
+	gifService: IGifProvider;
 }): Promise<GifResponse | null> {
 	const provider = gifService;
 	if (!(await tryExtractGifProviderSlug(provider, url))) return null;
@@ -88,7 +88,7 @@ async function resolveProviderGifUrl({
 }
 
 async function resolveProviderUrl(
-	provider: NatsGifProvider,
+	provider: IGifProvider,
 	params: {url: string; locale: string; country: string},
 ): Promise<GifResponse | null> {
 	try {

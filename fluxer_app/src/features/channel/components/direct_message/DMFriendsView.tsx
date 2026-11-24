@@ -20,6 +20,7 @@ import {Scroller} from '@app/features/ui/components/Scroller';
 import FocusRing from '@app/features/ui/focus_ring/FocusRing';
 import MobileLayout from '@app/features/ui/state/MobileLayout';
 import {getNextTabIndex, getTabNavigationDirection} from '@app/features/ui/tabs/TabKeyboardNavigation';
+import * as RelationshipCommands from '@app/features/relationship/commands/RelationshipCommands';
 import * as UserProfileCommands from '@app/features/user/commands/UserProfileCommands';
 import {useFluxerDocumentTitle} from '@app/features/window/hooks/useFluxerDocumentTitle';
 import {RelationshipTypes} from '@fluxer/constants/src/UserConstants';
@@ -110,6 +111,7 @@ export const DMFriendsView: React.FC = observer(() => {
 	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 	const [searchQuery, setSearchQuery] = useState('');
 	useEffect(() => {
+		void RelationshipCommands.fetchRelationships();
 		const pendingTab = FriendsTabState.consumeTab();
 		if (pendingTab) {
 			setActiveTab(pendingTab);

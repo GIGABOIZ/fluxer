@@ -275,7 +275,15 @@ export function MessageInteractionController(app: HonoApp) {
 				assertTierAllows(user, TierGatedActions.REACTION, NO_TIER_CONTEXT);
 			}
 			if (!user.isBot && user.id !== SYSTEM_USER_ID && !(user.flags & UserFlags.HAS_SESSION_STARTED)) {
-				throw InputValidationError.fromCode('emoji', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+				if (Config.selfHosted) {
+					await ctx.get('userRepository').atomicUpdateFlags(
+						user.id,
+						(flags) => flags | UserFlags.HAS_SESSION_STARTED,
+					).catch(() => undefined);
+					user.flags |= UserFlags.HAS_SESSION_STARTED;
+				} else {
+					throw InputValidationError.fromCode('emoji', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+				}
 			}
 			await ctx.get('channelService').interactions.addReaction({
 				viewer: viewerFromCtx(ctx),

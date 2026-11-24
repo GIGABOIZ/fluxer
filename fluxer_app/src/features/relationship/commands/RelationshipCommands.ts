@@ -3,6 +3,9 @@
 import {Endpoints} from '@app/features/app/constants/Endpoints';
 import {http} from '@app/features/platform/transport/RestTransport';
 import {Logger} from '@app/features/platform/utils/AppLogger';
+import type {RelationshipWire} from '@app/features/relationship/models/Relationship';
+import Relationships from '@app/features/relationship/state/Relationships';
+import Users from '@app/features/user/state/Users';
 import {RelationshipTypes} from '@fluxer/constants/src/UserConstants';
 
 const logger = new Logger('RelationshipCommands');
@@ -25,26 +28,60 @@ function friendRequestBody(options: SendFriendRequestOptions): Record<string, bo
 
 async function dispatchRelationshipCommand(command: RelationshipCommand): Promise<void> {
 	switch (command.kind) {
-		case 'send':
-			await http.post(Endpoints.USER_RELATIONSHIP(command.userId), {body: friendRequestBody(command.options)});
+		case 'send': {
+			const res = await http.post<RelationshipWire>(Endpoints.USER_RELATIONSHIP(command.userId), {body: friendRequestBody(command.options)});
+			if (res) {
+				Relationships.updateRelationship(res);
+				if (res.user) {
+					Users.cacheUsers([res.user]);
+				}
+			}
 			return;
-		case 'send-by-tag':
-			await http.post(Endpoints.USER_RELATIONSHIPS, {
+		}
+		case 'send-by-tag': {
+			const res = await http.post<RelationshipWire>(Endpoints.USER_RELATIONSHIPS, {
 				body: {username: command.username, discriminator: command.discriminator},
 			});
+			if (res) {
+				Relationships.updateRelationship(res);
+				if (res.user) {
+					Users.cacheUsers([res.user]);
+				}
+			}
 			return;
-		case 'accept':
-			await http.put(Endpoints.USER_RELATIONSHIP(command.userId));
+		}
+		case 'accept': {
+			const res = await http.put<RelationshipWire>(Endpoints.USER_RELATIONSHIP(command.userId));
+			if (res) {
+				Relationships.updateRelationship(res);
+				if (res.user) {
+					Users.cacheUsers([res.user]);
+				}
+			}
 			return;
-		case 'remove':
+		}
+		case 'remove': {
 			await http.delete(Endpoints.USER_RELATIONSHIP(command.userId));
+			Relationships.removeRelationship(command.userId);
 			return;
-		case 'block':
-			await http.put(Endpoints.USER_RELATIONSHIP(command.userId), {body: {type: RelationshipTypes.BLOCKED}});
+		}
+		case 'block': {
+			const res = await http.put<RelationshipWire>(Endpoints.USER_RELATIONSHIP(command.userId), {body: {type: RelationshipTypes.BLOCKED}});
+			if (res) {
+				Relationships.updateRelationship(res);
+				if (res.user) {
+					Users.cacheUsers([res.user]);
+				}
+			}
 			return;
-		case 'nickname':
-			await http.patch(Endpoints.USER_RELATIONSHIP(command.userId), {body: {nickname: command.nickname}});
+		}
+		case 'nickname': {
+			const res = await http.patch<RelationshipWire>(Endpoints.USER_RELATIONSHIP(command.userId), {body: {nickname: command.nickname}});
+			if (res) {
+				Relationships.updateRelationship(res);
+			}
 			return;
+		}
 	}
 }
 
@@ -98,5 +135,20 @@ export async function updateFriendNickname(userId: string, nickname: string | nu
 		await dispatchRelationshipCommand({kind: 'nickname', userId, nickname});
 	} catch (error) {
 		rethrowRelationshipFailure('Failed to update friend nickname:', error);
+	}
+}
+
+export async function fetchRelationships(): Promise<void> {
+	try {
+		const list = await http.get<Array<RelationshipWire>>(Endpoints.USER_RELATIONSHIPS);
+		if (Array.isArray(list)) {
+			Relationships.loadRelationships(list);
+			const usersToCache = list.map((r) => r.user).filter((u): u is NonNullable<typeof u> => Boolean(u));
+			if (usersToCache.length > 0) {
+				Users.cacheUsers(usersToCache);
+			}
+		}
+	} catch (error) {
+		logger.warn('Failed to fetch relationships:', error);
 	}
 }

@@ -26,6 +26,11 @@ import {
 } from '@app/features/user/components/modals/tabs/appearance_tab/ScalingTab';
 import {StreamerModeTabContent} from '@app/features/user/components/modals/tabs/appearance_tab/StreamerModeTab';
 import {ThemesLinkContent} from '@app/features/user/components/modals/tabs/appearance_tab/ThemesLinkContent';
+import {ThemeSelector} from '@app/features/theme_settings/components/ThemeSelector';
+import ThemeProfile from '@app/features/theme/state/ThemeProfile';
+import ThemeEditTarget from '@app/features/theme/state/ThemeEditTarget';
+import * as ThemeProfileCommands from '@app/features/theme/commands/ThemeProfileCommands';
+import type {ThemeType} from '@fluxer/constants/src/UserConstants';
 import inlineStyles from '@app/features/user/components/modals/tabs/TabInline.module.css';
 import {shouldShowAppZoomLevel} from '@app/features/user/components/settings_utils/AppZoomLevelUtils';
 import {
@@ -40,14 +45,24 @@ import {
 import {useLingui} from '@lingui/react/macro';
 import {observer} from 'mobx-react-lite';
 import type React from 'react';
+import {useCallback} from 'react';
 
 const AppearanceSections = observer(() => {
 	const {i18n} = useLingui();
 	const showZoomLevel = shouldShowAppZoomLevel();
 	const showHdrSettings = shouldShowHdrSettings();
+	const selectedTheme = ThemeProfile.themePreference;
+	const handleThemeChange = useCallback((theme: ThemeType) => {
+		ThemeProfileCommands.setThemePreference(theme, ThemeEditTarget.target);
+	}, []);
 	return (
 		<>
 			<SettingsSection id="theme" title={i18n._(THEME_DESCRIPTOR)} data-flx="user.appearance-tab.theme">
+				<ThemeSelector
+					value={selectedTheme}
+					onChange={handleThemeChange}
+					data-flx="user.appearance-tab.theme-selector"
+				/>
 				<ThemesLinkContent data-flx="user.appearance-tab.themes-link-content" />
 			</SettingsSection>
 

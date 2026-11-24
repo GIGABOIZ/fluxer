@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type {NatsGifProvider} from '@app/api/gif/NatsGifProvider';
+import type {IGifProvider} from '@app/api/gif/IGifProvider';
 import type {HonoEnv} from '@app/api/types/HonoEnv';
 import {
 	GIF_PROVIDER_ATTRIBUTION_HEADER,
@@ -11,7 +11,7 @@ import {createMiddleware} from 'hono/factory';
 
 export const GifProviderHeaderMiddleware = createMiddleware<HonoEnv>(async (ctx, next) => {
 	await next();
-	const gifService = ctx.get('gifService') as NatsGifProvider | undefined;
+	const gifService = ctx.get('gifService') as IGifProvider | undefined;
 	if (!gifService) return;
 	const provider = await gifService.requireAvailable().catch(() => null);
 	if (!provider) return;

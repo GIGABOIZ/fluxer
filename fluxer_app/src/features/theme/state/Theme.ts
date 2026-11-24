@@ -12,9 +12,18 @@ type ExplicitTheme =
 	| typeof ThemeTypes.DARK
 	| typeof ThemeTypes.DARK_LEGACY
 	| typeof ThemeTypes.LIGHT
-	| typeof ThemeTypes.COAL;
+	| typeof ThemeTypes.COAL
+	| typeof ThemeTypes.VISION_GLASS
+	| typeof ThemeTypes.MATCHA_CREAM;
 
-const EXPLICIT_THEMES = new Set<string>([ThemeTypes.DARK, ThemeTypes.DARK_LEGACY, ThemeTypes.LIGHT, ThemeTypes.COAL]);
+const EXPLICIT_THEMES = new Set<string>([
+	ThemeTypes.DARK,
+	ThemeTypes.DARK_LEGACY,
+	ThemeTypes.LIGHT,
+	ThemeTypes.COAL,
+	ThemeTypes.VISION_GLASS,
+	ThemeTypes.MATCHA_CREAM,
+]);
 const STORAGE_KEY = 'theme';
 
 function isExplicitTheme(theme: string | null | undefined): theme is ExplicitTheme {

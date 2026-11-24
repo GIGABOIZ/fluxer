@@ -383,7 +383,7 @@ export const Attachment: FC<AttachmentProps> = observer(
 		if (renderInMosaic && isMediaAttachment(att)) {
 			return null;
 		}
-		const isVisualType = isImageType(att.content_type) || isVideoType(att.content_type);
+		const isVisualType = isMediaAttachment(att);
 		const tooSmallToShowInline =
 			isVisualType && !isUsefulVisualMediaSize(att.width ?? 0, att.height ?? 0, getAttachmentMediaDimensions());
 		if ((!inlineAttachmentMedia || tooSmallToShowInline) && isVisualType) {
@@ -472,7 +472,7 @@ export const Attachment: FC<AttachmentProps> = observer(
 				),
 			);
 		}
-		if (isImageType(att.content_type)) {
+		if (isMediaAttachment(att) && isImageType(att.content_type)) {
 			return renderWithFootnote(
 				wrapSpoiler(
 					<div
@@ -500,7 +500,7 @@ export const Attachment: FC<AttachmentProps> = observer(
 				),
 			);
 		}
-		if (isVideoType(att.content_type)) {
+		if (isMediaAttachment(att) && isVideoType(att.content_type)) {
 			return renderWithFootnote(
 				wrapSpoiler(
 					<div

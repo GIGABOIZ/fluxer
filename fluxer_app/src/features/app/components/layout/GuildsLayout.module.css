@@ -60,7 +60,7 @@
 	);
 	width: var(--layout-guild-list-width);
 	min-width: 0;
-	background-color: var(--background-secondary);
+	background-color: var(--background-tertiary);
 	position: relative;
 	z-index: var(--z-index-elevated-1);
 }
@@ -69,7 +69,7 @@
 	height: 100%;
 	width: 100%;
 	min-width: 0;
-	background-color: var(--background-secondary);
+	background-color: var(--background-tertiary);
 	padding-top: var(--spacing-1);
 	padding-bottom: var(--spacing-2);
 	scroll-padding-bottom: calc(

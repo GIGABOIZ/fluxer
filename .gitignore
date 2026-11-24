@@ -45,6 +45,7 @@
 /desktop-shared-assets/
 /desktop-modules/
 /upload_staging/
+**/.sync_data/
 
 
 **/.idea/

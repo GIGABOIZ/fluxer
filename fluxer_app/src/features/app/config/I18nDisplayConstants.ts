@@ -10,15 +10,15 @@ export const PRODUCT_LABS_COMMUNITY_NAME = `${PRODUCT_NAME} Labs`;
 export const OPERATOR_PASS_NAME = 'Operator Pass';
 export const OPERATOR_PASS_SELLER_ADDRESS = 'c/o Embassy House, Östgötagatan 12, 116 25 Stockholm';
 export const OPERATOR_PASS_SELLER_PHONE = '+46 79 101 18 18';
-export const DESKTOP_ENTRY_NAME = 'Fluxer';
-export const CANARY_DESKTOP_ENTRY_NAME = 'Fluxer Canary';
+export const DESKTOP_ENTRY_NAME = 'SYNC';
+export const CANARY_DESKTOP_ENTRY_NAME = 'SYNC Canary';
 export const PAYMENT_PROVIDER_NAME = 'Stripe';
 export const BLUESKY_PROVIDER_NAME = 'Bluesky';
 export const APP_STORE_NAME = 'App Store';
 export const GOOGLE_PLAY_NAME = 'Google Play';
 export const PIX_PAYMENT_METHOD = 'Pix';
 export const UPI_PAYMENT_METHOD = 'UPI';
-export const SUPPORT_EMAIL = 'support@fluxer.com';
+export const SUPPORT_EMAIL = 'support@sync.internal';
 export const SUPPORT_EMAIL_MAILTO = `mailto:${SUPPORT_EMAIL}`;
 export const I18N_WEBLATE_DOMAIN = 'weblate.fluxer.tools';
 export const I18N_WEBLATE_URL = `https://${I18N_WEBLATE_DOMAIN}`;
@@ -37,19 +37,19 @@ export const EXAMPLE_CHANNEL_NAME = 'new-channel';
 export const EXAMPLE_GENERAL_CHANNEL_NAME = 'general';
 export const EXAMPLE_USERNAME_MENTION = '@username';
 export const VISIONARY_LIFETIME_BADGE_LABEL = 'Visionary #42';
-export const LINK_PREVIEW_EXAMPLE_URL = 'https://fluxer.com';
+export const LINK_PREVIEW_EXAMPLE_URL = 'http://localhost:3000';
 export const EXAMPLE_GIF_URLS = `${EXAMPLE_URL}/gif1.gif\n${EXAMPLE_URL}/gif2.gif`;
 export const THE_OTHER_PLATFORM_TEMPLATE_EXAMPLE_URL = `https://${THE_OTHER_PLATFORM.toLowerCase()}.new/abcd1234`;
 const DESKTOP_DOWNLOAD_URLS: Record<string, string> = {
-	stable: 'https://fluxer.com/download',
-	canary: 'https://canary.fluxer.com/download',
-	development: 'http://localhost:8088/download',
+	stable: 'http://localhost:3000/download',
+	canary: 'http://localhost:3000/download',
+	development: 'http://localhost:3000/download',
 };
 
 export const DESKTOP_DOWNLOAD_URL = DESKTOP_DOWNLOAD_URLS[Config.RELEASE_CHANNEL] ?? DESKTOP_DOWNLOAD_URLS.stable;
 export const FLUXER_DOCS_DOMAIN = 'fluxer.dev';
 export const FLUXER_DOCS_URL = `https://${FLUXER_DOCS_DOMAIN}`;
-export const FLUXER_BLUESKY_HANDLE = '@fluxer.app';
+export const FLUXER_BLUESKY_HANDLE = '@sync.internal';
 export const YOUTUBE_PROVIDER_NAME = 'YouTube';
 export const EVERYONE_MENTION = '@everyone';
 export const HERE_MENTION = '@here';

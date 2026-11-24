@@ -302,7 +302,7 @@ async function createAccountUnlocked(
 		registrationAccess = await resolveRegistrationAccess(
 			instanceConfigRepository,
 			input.registrationUrlCode,
-			usernameMode ? null : input.email,
+			input.email ? input.email.trim() : null,
 		);
 	}
 	if (registrationAccess.pendingApproval && !hasSignInCredentials(input, usernameMode)) {
@@ -339,7 +339,7 @@ async function createAccountUnlocked(
 	if (input.password && (await AuthPassword.isPasswordPwned(ctx, input.password))) {
 		throw InputValidationError.fromCode('password', ValidationErrorCodes.PASSWORD_IS_TOO_COMMON);
 	}
-	const rawEmail = usernameMode ? null : input.email;
+	const rawEmail = input.email ? input.email.trim() : null;
 	const enforceRateLimits = !config.dev.relaxRegistrationRateLimits && !setupTokenVerified;
 	const budgetEnv = budgetEnvFor(ctx.services, request);
 	if (instant) {

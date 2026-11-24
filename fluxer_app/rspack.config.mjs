@@ -292,6 +292,41 @@ function authEntryDocumentPlugin() {
 	};
 }
 
+function staticHtmlCleanupPlugin({staticCdnEndpoint, mediaEndpoint}) {
+	return {
+		apply(compiler) {
+			compiler.hooks.thisCompilation.tap('StaticHtmlCleanupPlugin', (compilation) => {
+				compilation.hooks.processAssets.tap(
+					{name: 'StaticHtmlCleanupPlugin', stage: Compilation.PROCESS_ASSETS_STAGE_REPORT + 10},
+					() => {
+						for (const filename of ['index.html', AUTH_ENTRY_DOCUMENT]) {
+							const asset = compilation.getAsset(filename);
+							if (asset == null) {
+								continue;
+							}
+							let html = String(asset.source.source());
+							if (staticCdnEndpoint) {
+								html = html.replaceAll('{{STATIC_CDN_ENDPOINT}}', staticCdnEndpoint);
+							} else {
+								html = html.replace(/<link rel="preconnect" href="\{\{STATIC_CDN_ENDPOINT\}\}"[^>]*>\s*/g, '');
+								html = html.replaceAll('{{STATIC_CDN_ENDPOINT}}', '');
+							}
+							if (mediaEndpoint) {
+								html = html.replaceAll('{{MEDIA_ENDPOINT}}', mediaEndpoint);
+							} else {
+								html = html.replace(/<link rel="preconnect" href="\{\{MEDIA_ENDPOINT\}\}"[^>]*>\s*/g, '');
+								html = html.replaceAll('{{MEDIA_ENDPOINT}}', '');
+							}
+							html = html.replace(/\s*nonce="\{\{CSP_NONCE_PLACEHOLDER\}\}"/g, '');
+							compilation.updateAsset(filename, new sources.RawSource(html));
+						}
+					},
+				);
+			});
+		},
+	};
+}
+
 function rocketLoaderOptOutPlugin() {
 	return {
 		apply(compiler) {
@@ -732,15 +767,16 @@ export default () => {
 						to: DIST_DIR,
 						noErrorOnMissing: true,
 					},
-					...(isDesktopRenderer
-						? [
-								{
-									from: path.join(MONOREPO_ROOT, 'fluxer_static', 'web'),
-									to: path.join(DIST_DIR, 'web'),
-								},
-							]
-						: []),
+					{
+						from: path.join(MONOREPO_ROOT, 'fluxer_static', 'web'),
+						to: path.join(DIST_DIR, 'web'),
+						noErrorOnMissing: true,
+					},
 				],
+			}),
+			staticHtmlCleanupPlugin({
+				staticCdnEndpoint: normalizedStaticCdnEndpoint,
+				mediaEndpoint: envString('PUBLIC_MEDIA_ENDPOINT', ''),
 			}),
 			staticFilesPlugin({
 				staticCdnEndpoint: normalizedStaticCdnEndpoint,
@@ -1033,6 +1069,50 @@ export default () => {
 			static: {
 				directory: DIST_DIR,
 				watch: false,
+			},
+			proxy: [
+				{
+					context: ['/api', '/media', '/.well-known', '/upload-relay'],
+					target: process.env.FLUXER_API_ENDPOINT || 'http://127.0.0.1:8080',
+					pathRewrite: {'^/api': ''},
+					changeOrigin: true,
+					xfwd: true,
+					headers: {
+						'x-forwarded-for': '127.0.0.1',
+					},
+					onProxyReq: (proxyReq, req) => {
+						const ip = req.socket?.remoteAddress || '127.0.0.1';
+						proxyReq.setHeader('x-forwarded-for', ip);
+					},
+				},
+				{
+					context: ['/gateway'],
+					target: 'http://127.0.0.1:8080',
+					ws: true,
+					changeOrigin: true,
+				},
+			],
+			setupMiddlewares: (middlewares) => {
+				middlewares.unshift({
+					name: 'sync-spa-fallback',
+					middleware: (req, res, next) => {
+						const url = req.url || '';
+						if (
+							req.method === 'GET' &&
+							(req.headers.accept || '').includes('text/html') &&
+							!url.startsWith('/assets') &&
+							!url.startsWith('/.well-known') &&
+							!url.startsWith('/media') &&
+							!url.startsWith('/upload-relay') &&
+							!url.startsWith('/api') &&
+							!url.includes('.')
+						) {
+							req.url = '/';
+						}
+						next();
+					},
+				});
+				return middlewares;
 			},
 		},
 	};

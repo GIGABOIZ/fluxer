@@ -8,6 +8,7 @@ import type {RelationshipWire} from '@app/features/relationship/models/Relations
 import Relationships from '@app/features/relationship/state/Relationships';
 import QuickSwitcher from '@app/features/search/state/QuickSwitcher';
 import Notification from '@app/features/ui/state/Notification';
+import Users from '@app/features/user/state/Users';
 import {RelationshipTypes} from '@fluxer/constants/src/UserConstants';
 
 interface RelationshipPayload {
@@ -16,7 +17,11 @@ interface RelationshipPayload {
 }
 
 export function handleRelationshipAdd(data: RelationshipPayload, _context: GatewayHandlerContext): void {
-	Relationships.updateRelationship(data as RelationshipWire);
+	const rel = data as RelationshipWire;
+	if (rel.user) {
+		Users.cacheUsers([rel.user]);
+	}
+	Relationships.updateRelationship(rel);
 	MemberSearch.handleFriendshipChange(data.id, data.type === RelationshipTypes.FRIEND);
 	Messages.handleRelationshipUpdate();
 	ReadStates.handleRelationshipUpdate();

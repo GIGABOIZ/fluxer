@@ -15,7 +15,7 @@ import {
 	type ResolvedGifProviderSlug,
 	tryExtractGifProviderSlug,
 } from '@app/api/gif/GifProviderUtils';
-import type {NatsGifProvider} from '@app/api/gif/NatsGifProvider';
+import type {IGifProvider} from '@app/api/gif/IGifProvider';
 import type {MediaProxyMetadataResponse} from '@app/api/infrastructure/IMediaService';
 import type {IStorageService} from '@app/api/infrastructure/IStorageService';
 import type {IUnfurlerService} from '@app/api/infrastructure/IUnfurlerService';
@@ -103,7 +103,7 @@ export class FavoriteMemeService {
 		private readonly storageService: IStorageService,
 		private readonly unfurlerService: IUnfurlerService,
 		private readonly limitConfigService: LimitConfigService,
-		private readonly gifService: NatsGifProvider,
+		private readonly gifService: IGifProvider,
 	) {}
 
 	async createFromMessage({

@@ -283,7 +283,15 @@ export class MessageSendService {
 		data: MessageRequest;
 	}): Promise<void> {
 		if (!user.isBot && user.id !== SYSTEM_USER_ID && !(user.flags & UserFlags.HAS_SESSION_STARTED)) {
-			throw InputValidationError.fromCode('content', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+			if (Config.selfHosted) {
+				await this.deps.userRepository.atomicUpdateFlags(
+					user.id,
+					(flags) => flags | UserFlags.HAS_SESSION_STARTED,
+				).catch(() => undefined);
+				user.flags |= UserFlags.HAS_SESSION_STARTED;
+			} else {
+				throw InputValidationError.fromCode('content', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+			}
 		}
 		const {channel, guild, member, checkPermission, hasPermission} = parentAuth;
 		await this.checkMessageSendPermissions({guild, member, channel, data, user, checkPermission, hasPermission});
@@ -626,7 +634,15 @@ export class MessageSendService {
 			channelId,
 		});
 		if (!user.isBot && user.id !== SYSTEM_USER_ID && !(user.flags & UserFlags.HAS_SESSION_STARTED)) {
-			throw InputValidationError.fromCode('content', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+			if (Config.selfHosted) {
+				await this.deps.userRepository.atomicUpdateFlags(
+					user.id,
+					(flags) => flags | UserFlags.HAS_SESSION_STARTED,
+				).catch(() => undefined);
+				user.flags |= UserFlags.HAS_SESSION_STARTED;
+			} else {
+				throw InputValidationError.fromCode('content', ValidationErrorCodes.MUST_START_SESSION_BEFORE_SENDING);
+			}
 		}
 		if (isPersonalNotesChannelId({userId: user.id, channelId})) {
 			const message = await this.sendPersonalNoteMessage({authChannel, user, viewer, channelId, data, requestCache});

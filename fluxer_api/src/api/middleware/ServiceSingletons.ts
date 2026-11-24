@@ -17,6 +17,7 @@ import {createEmailProvider} from '@app/api/email/EmailProviderFactory';
 import {EnforcementDecisionRepository} from '@app/api/enforcement/EnforcementDecisionRepository';
 import {FavoriteMemeRepository} from '@app/api/favorite_meme/FavoriteMemeRepository';
 import {GatewayRequestService} from '@app/api/gateway/GatewayRequestService';
+import type {IGifProvider} from '@app/api/gif/IGifProvider';
 import {createNatsGifProvider} from '@app/api/gif/NatsGifProvider';
 import {GuildAuditLogService} from '@app/api/guild/GuildAuditLogService';
 import {GuildDiscoveryRepository} from '@app/api/guild/repositories/GuildDiscoveryRepository';
@@ -378,10 +379,20 @@ export const getBotAuthService = singleton(() => new BotAuthService(getApplicati
 export const getBotMfaMirrorService = singleton(
 	() => new BotMfaMirrorService(getApplicationRepository(), getUserRepository(), getGatewayService()),
 );
-export const getGifService = singleton(() => {
+let _injectedGifService: IGifProvider | undefined;
+
+export function setInjectedGifService(service: IGifProvider | undefined): void {
+	_injectedGifService = service;
+}
+
+const getDefaultGifService = singleton(() => {
 	const instanceConfigRepository = getInstanceConfigRepository();
 	return createNatsGifProvider(async () => (await instanceConfigRepository.getEffectiveGifConfig()).klipy_api_key);
 });
+
+export const getGifService = (): IGifProvider => {
+	return _injectedGifService ?? getDefaultGifService();
+};
 export const getGuildAuditLogService = singleton(
 	() => new GuildAuditLogService(getGuildRepository(), getSnowflakeService(), getWorkerService(), getGatewayService()),
 );

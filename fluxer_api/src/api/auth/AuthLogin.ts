@@ -412,22 +412,29 @@ async function resolveLoginIdentifier(ctx: ApiContext, data: LoginRequest): Prom
 	if (mode === AccountIdentityModes.USERNAME) {
 		const field = data.email !== undefined ? 'email' : 'login';
 		const input = (field === 'email' ? data.email : data.login) ?? '';
-		const handle = field === 'email' ? parseOlderAppLoginHandle(ctx, input) : parseLoginHandle(input);
+		const isEmailInput = input.includes('@');
+		const handle = isEmailInput ? parseOlderAppLoginHandle(ctx, input) : parseLoginHandle(input);
 		return {
 			field,
 			rateLimits: [],
 			sourceRateLimits: (sourceKey) => {
-				if (!handle) {
+				if (!handle && !isEmailInput) {
 					return [{identifier: `login:id-unparsed:${sourceKey}`, maxAttempts: 5, windowMs: ms('15 minutes')}];
 				}
-				const lowered = handle.username.toLowerCase();
-				return [{identifier: `login:id:${lowered}:${sourceKey}`, maxAttempts: 5, windowMs: ms('15 minutes')}];
+				const key = isEmailInput ? input.trim().toLowerCase() : handle!.username.toLowerCase();
+				return [{identifier: `login:id:${key}:${sourceKey}`, maxAttempts: 5, windowMs: ms('15 minutes')}];
 			},
-			failureRateLimit: handle
-				? {identifier: `login:id:${handle.username.toLowerCase()}`, maxAttempts: 100, windowMs: ms('1 hour')}
+			failureRateLimit: handle || isEmailInput
+				? {identifier: `login:id:${isEmailInput ? input.trim().toLowerCase() : handle!.username.toLowerCase()}`, maxAttempts: 100, windowMs: ms('1 hour')}
 				: null,
 			invalidCode: ValidationErrorCodes.INVALID_LOGIN_OR_PASSWORD,
-			lookup: async () => (handle ? await findPersonByLoginHandle(users, handle) : null),
+			lookup: async () => {
+				if (isEmailInput) {
+					const byEmail = await users.findByEmail(input.trim());
+					if (byEmail) return byEmail;
+				}
+				return handle ? await findPersonByLoginHandle(users, handle) : null;
+			},
 		};
 	}
 	if (data.email !== undefined) {

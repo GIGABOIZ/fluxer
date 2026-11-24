@@ -33,7 +33,9 @@ export type ColorSystemTheme =
 	| typeof ThemeTypes.DARK
 	| typeof ThemeTypes.DARK_LEGACY
 	| typeof ThemeTypes.COAL
-	| typeof ThemeTypes.LIGHT;
+	| typeof ThemeTypes.LIGHT
+	| typeof ThemeTypes.VISION_GLASS
+	| typeof ThemeTypes.MATCHA_CREAM;
 
 interface BrandTint {
 	surface: string;
@@ -215,6 +217,18 @@ export const THEME_PALETTES: Record<ColorSystemTheme, ThemePalette> = {
 		surfaceAliases: {},
 		selectedOverlay: {family: 'neutralLight', saturation: 10, lightness: 10, alpha: 0.1},
 		brandTint: {surface: '--background-primary', rest: 12, hover: 18},
+	},
+	[ThemeTypes.VISION_GLASS]: {
+		surfaceScale: 'darkSurface',
+		surfaceAliases: {},
+		selectedOverlay: {family: 'neutralDark', lightness: 100, alpha: 0.12},
+		brandTint: {surface: '--background-secondary', rest: 36, hover: 48},
+	},
+	[ThemeTypes.MATCHA_CREAM]: {
+		surfaceScale: 'lightSurface',
+		surfaceAliases: {},
+		selectedOverlay: {family: 'neutralLight', saturation: 10, lightness: 10, alpha: 0.08},
+		brandTint: {surface: '--background-primary', rest: 14, hover: 20},
 	},
 };
 

@@ -4,6 +4,44 @@ import type {MessageAttachment} from '@fluxer/schema/src/domains/message/Message
 
 export const ATTACHMENT_CARD_WIDTH = 400;
 
+export const NON_MEDIA_EXTENSIONS = new Set([
+	'apk',
+	'exe',
+	'msi',
+	'zip',
+	'rar',
+	'7z',
+	'tar',
+	'gz',
+	'bz2',
+	'xz',
+	'doc',
+	'docx',
+	'xls',
+	'xlsx',
+	'ppt',
+	'pptx',
+	'pdf',
+	'txt',
+	'md',
+	'json',
+	'xml',
+	'csv',
+	'iso',
+	'bin',
+	'dmg',
+	'deb',
+	'rpm',
+	'jar',
+	'torrent',
+	'psd',
+	'ai',
+	'bat',
+	'cmd',
+	'ps1',
+	'sh',
+]);
+
 function isImageType(contentType?: string): boolean {
 	return contentType?.startsWith('image/') ?? false;
 }
@@ -17,8 +55,18 @@ const hasRenderableDimensions = (attachment: MessageAttachment): boolean =>
 	attachment.width > 0 &&
 	typeof attachment.height === 'number' &&
 	attachment.height > 0;
-export const isMediaAttachment = (attachment: MessageAttachment): boolean =>
-	hasRenderableDimensions(attachment) && (isImageType(attachment.content_type) || isVideoType(attachment.content_type));
+
+export const isMediaAttachment = (attachment: MessageAttachment): boolean => {
+	const filename = attachment.filename || attachment.title || '';
+	const ext = filename.split('.').pop()?.toLowerCase();
+	if (ext && NON_MEDIA_EXTENSIONS.has(ext)) {
+		return false;
+	}
+	return (
+		hasRenderableDimensions(attachment) &&
+		(isImageType(attachment.content_type) || isVideoType(attachment.content_type))
+	);
+};
 
 export function splitMediaAndFileAttachments(attachments: ReadonlyArray<MessageAttachment>): {
 	mediaAttachments: Array<MessageAttachment>;

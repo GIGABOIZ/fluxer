@@ -248,7 +248,7 @@ export const AuthRegisterFormCore = observer(function AuthRegisterFormCore({
 				{
 					global_name: values.global_name || undefined,
 					username: (requireUsername ? values.username.trim() : values.username) || undefined,
-					email: showEmail ? values.email : undefined,
+					email: showEmail && typeof values.email === 'string' ? values.email.trim() || undefined : undefined,
 					password: showPassword ? values.password : undefined,
 					date_of_birth: dateOfBirth,
 					consent: true,

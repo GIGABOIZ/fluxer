@@ -87,7 +87,7 @@ export function AuthIdentifierEmailStep({
 	const {i18n} = useLingui();
 	const handleEmailSubmit = () =>
 		run(async () => {
-			const address = email.trim();
+			const address = typeof email === 'string' ? email.trim() : '';
 			const response = await AccountEntryCommands.identify(address, runtimeSnapshot);
 			const decision = decideAfterIdentify(response, emailCodes, registrationUrlCode !== null);
 			if (decision.kind === 'registration_closed') {
@@ -159,7 +159,7 @@ export function AuthIdentifierEmailStep({
 					type="submit"
 					fitContainer
 					submitting={submitting}
-					disabled={email.trim().length === 0}
+					disabled={typeof email !== 'string' || email.trim().length === 0}
 					data-flx="auth.flow.identifier-first.button.continue"
 				>
 					{i18n._(CONTINUE_DESCRIPTOR)}

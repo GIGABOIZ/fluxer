@@ -33,7 +33,10 @@ export function extractClientIp(req: Request, options?: ClientIpExtractionOption
 		return options?.peerAddress ? canonicalizeIpAddress(options.peerAddress) : null;
 	}
 	const headerValue = req.headers.get(resolveClientIpHeaderName(options.clientIpHeaderName));
-	return headerValue === null ? null : canonicalizeIpAddress(headerValue.split(',', 1)[0]);
+	if (headerValue !== null) {
+		return canonicalizeIpAddress(headerValue.split(',', 1)[0]);
+	}
+	return options?.peerAddress ? canonicalizeIpAddress(options.peerAddress) : null;
 }
 
 export function requireClientIp(req: Request, options?: ClientIpExtractionOptions): string {

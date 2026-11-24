@@ -722,7 +722,7 @@ class Accessibility {
 	showMediaDeleteButton = true;
 	showSuppressEmbedsButton = true;
 	showGifIndicator = true;
-	showAttachmentExpiryIndicator = true;
+	showAttachmentExpiryIndicator = false;
 	useBrowserLocaleForTimeFormat = false;
 	channelTypingIndicatorMode: ChannelTypingIndicatorMode = ChannelTypingIndicatorMode.AVATARS;
 	showMessageActionBar = true;

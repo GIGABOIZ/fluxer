@@ -53,7 +53,10 @@ export function resolveClientIpWithOptions(ctx: Context<HonoEnv>, options: Clien
 	) {
 		return cached.ip;
 	}
-	const ip = extractClientIp(ctx.req.raw, withPeerAddress(ctx.req.raw, {trustClientIpHeader, clientIpHeaderName}));
+	let ip = extractClientIp(ctx.req.raw, withPeerAddress(ctx.req.raw, {trustClientIpHeader, clientIpHeaderName}));
+	if (!ip && Config.dev?.testModeEnabled) {
+		ip = '127.0.0.1';
+	}
 	ctx.set('clientIpResolution', {trustClientIpHeader, clientIpHeaderName, ip});
 	return ip;
 }
@@ -63,7 +66,11 @@ function proxyClientIpOptions(proxy: APIConfig['proxy']): ClientIpResolutionOpti
 }
 
 export function extractConfiguredClientIp(request: Request): string | null {
-	return extractClientIp(request, withPeerAddress(request, proxyClientIpOptions(Config.proxy)));
+	const ip = extractClientIp(request, withPeerAddress(request, proxyClientIpOptions(Config.proxy)));
+	if (!ip && Config.dev?.testModeEnabled) {
+		return '127.0.0.1';
+	}
+	return ip;
 }
 
 export function requireConfiguredClientIp(request: Request, proxy: APIConfig['proxy']): string {

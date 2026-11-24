@@ -15,6 +15,7 @@ import '@app/app/globals.css';
 import '@app/features/theme/styles/generated/color-system.css';
 import '@app/features/theme/styles/generated/message-layout.css';
 import '@app/features/theme/styles/preflight.css';
+import '@app/features/theme/styles/custom-themes.css';
 import {resolveDomainMigrationSide} from '@app/features/app/domain_migration/DomainMigrationCore';
 import {runDomainMigrationPreMount} from '@app/features/app/domain_migration/DomainMigrationPreMount';
 import {installRuntimeConfigEffects} from '@app/features/app/state/RuntimeConfigEffects';
