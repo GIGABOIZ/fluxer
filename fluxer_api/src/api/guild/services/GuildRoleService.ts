@@ -1047,7 +1047,10 @@ export class GuildRoleService {
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_ROLE_CREATE',
-			data: {role: mapGuildRoleToResponse(role)},
+			data: {
+				guild_id: guildId.toString(),
+				role: mapGuildRoleToResponse(role),
+			},
 		});
 	}
 
@@ -1055,7 +1058,10 @@ export class GuildRoleService {
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_ROLE_UPDATE',
-			data: {role: mapGuildRoleToResponse(role)},
+			data: {
+				guild_id: guildId.toString(),
+				role: mapGuildRoleToResponse(role),
+			},
 		});
 	}
 
@@ -1063,7 +1069,10 @@ export class GuildRoleService {
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_ROLE_DELETE',
-			data: {role_id: roleId.toString()},
+			data: {
+				guild_id: guildId.toString(),
+				role_id: roleId.toString(),
+			},
 		});
 	}
 
@@ -1078,7 +1087,10 @@ export class GuildRoleService {
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_ROLE_UPDATE_BULK',
-			data: {roles: roleResponses},
+			data: {
+				guild_id: guildId.toString(),
+				roles: roleResponses,
+			},
 		});
 	}
 

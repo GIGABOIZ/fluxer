@@ -560,7 +560,7 @@ class Presence {
 			}
 		}
 		for (const channel of Channels.getPrivateChannels()) {
-			if (channel.type !== ChannelTypes.GROUP_DM) {
+			if (channel.type !== ChannelTypes.GROUP_DM && channel.type !== ChannelTypes.DM) {
 				continue;
 			}
 			for (const userId of channel.recipientIds) {

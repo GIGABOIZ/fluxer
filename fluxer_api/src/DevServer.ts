@@ -365,6 +365,28 @@ async function buildGuildReadyData(guildId: GuildID, userId: UserID): Promise<an
 	const joinedAt = userMember?.joinedAt ? userMember.joinedAt.toISOString() : new Date().toISOString();
 	const guildProps = mapGuildToGuildResponse(guild);
 
+	const guildMemberUserIds = new Set(members.map((m) => m.userId.toString()));
+	const guildPresences: any[] = [];
+	for (const [activeUid, sockets] of userSockets.entries()) {
+		if (sockets.size > 0 && guildMemberUserIds.has(activeUid)) {
+			const u = await users.findUnique(createUserID(BigInt(activeUid)));
+			const pres = userPresences.get(activeUid) || {
+				status: 'online',
+				afk: false,
+				mobile: false,
+				custom_status: null,
+			};
+			guildPresences.push({
+				user: u ? mapUserToPartialResponse(u) : { id: activeUid },
+				status: pres.status,
+				afk: pres.afk,
+				mobile: pres.mobile,
+				custom_status: pres.custom_status,
+				guild_id: guildId.toString(),
+			});
+		}
+	}
+
 	return {
 		id: guildId.toString(),
 		properties: {
@@ -384,7 +406,7 @@ async function buildGuildReadyData(guildId: GuildID, userId: UserID): Promise<an
 		joined_at: joinedAt,
 		unavailable: false,
 		threads: [],
-		presences: [],
+		presences: guildPresences,
 		voice_states: [],
 	};
 }

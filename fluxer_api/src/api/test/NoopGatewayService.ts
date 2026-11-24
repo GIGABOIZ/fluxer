@@ -121,7 +121,14 @@ export class NoopGatewayService implements IGatewayService {
 		memberCount: number;
 		presenceCount: number;
 	}> {
-		const members = guildMembers.get(guildId.toString());
+		let members = guildMembers.get(guildId.toString());
+		if (!members || members.size === 0) {
+			const memberList = await guildMemberRepository.listMembers(guildId);
+			if (memberList.length > 0) {
+				members = new Set(memberList.map((m) => m.userId));
+				guildMembers.set(guildId.toString(), members);
+			}
+		}
 		return {memberCount: members?.size ?? 0, presenceCount: 0};
 	}
 
@@ -133,6 +140,10 @@ export class NoopGatewayService implements IGatewayService {
 		const guild = await guildRepository.findUnique(guildId);
 		if (guild) {
 			this.setGuildOwner(guildId, guild.ownerId);
+			const memberList = await guildMemberRepository.listMembers(guildId);
+			for (const m of memberList) {
+				this.addGuildMember(guildId, m.userId);
+			}
 		}
 	}
 
@@ -295,6 +306,10 @@ export class NoopGatewayService implements IGatewayService {
 
 	async canManageRole(params: {guildId: GuildID; userId: UserID; roleId: RoleID}): Promise<boolean> {
 		const {guildId, userId, roleId} = params;
+		const guild = await guildRepository.findUnique(guildId);
+		if (guild && guild.ownerId === userId) {
+			return true;
+		}
 		const member = await guildMemberRepository.getMember(guildId, userId);
 		if (!member) {
 			return false;
@@ -466,7 +481,7 @@ export class NoopGatewayService implements IGatewayService {
 				emojis: emojis.map(mapGuildEmojiToResponse),
 				stickers: stickers.map(mapGuildStickerToResponse),
 				channels,
-				member_count: guildMembers.get(params.guildId.toString())?.size ?? 0,
+				member_count: guildMembers.get(params.guildId.toString())?.size ?? (await guildMemberRepository.listMembers(params.guildId)).length,
 				online_count: 0,
 			};
 		}
@@ -549,7 +564,20 @@ export class NoopGatewayService implements IGatewayService {
 
 	async hasGuildMember(params: {guildId: GuildID; userId: UserID}): Promise<boolean> {
 		const members = guildMembers.get(params.guildId.toString());
-		return members?.has(params.userId) ?? false;
+		if (members?.has(params.userId)) {
+			return true;
+		}
+		const member = await guildMemberRepository.getMember(params.guildId, params.userId);
+		if (member) {
+			this.addGuildMember(params.guildId, params.userId);
+			return true;
+		}
+		const guild = await guildRepository.findUnique(params.guildId);
+		if (guild && guild.ownerId.toString() === params.userId.toString()) {
+			this.addGuildMember(params.guildId, params.userId);
+			return true;
+		}
+		return false;
 	}
 
 	async listGuildMembers(params: {guildId: GuildID; limit: number; offset: number}): Promise<{

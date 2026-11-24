@@ -39,7 +39,10 @@ export async function propagatePartialUserChange(deps: PartialUserChangePropagat
 		await gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_MEMBER_UPDATE',
-			data: memberResponse,
+			data: {
+				...memberResponse,
+				guild_id: guildId.toString(),
+			},
 		});
 	}
 	requestCache.clear();

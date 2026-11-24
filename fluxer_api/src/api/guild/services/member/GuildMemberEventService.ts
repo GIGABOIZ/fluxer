@@ -20,10 +20,14 @@ export class GuildMemberEventService {
 		member: GuildMember;
 		requestCache: RequestCache;
 	}): Promise<void> {
+		const memberResponse = await mapGuildMemberToResponse(member, this.userCacheService, requestCache);
 		await this.gatewayService.dispatchGuild({
 			guildId: member.guildId,
 			event: 'GUILD_MEMBER_ADD',
-			data: await mapGuildMemberToResponse(member, this.userCacheService, requestCache),
+			data: {
+				...memberResponse,
+				guild_id: member.guildId.toString(),
+			},
 		});
 	}
 
@@ -40,15 +44,22 @@ export class GuildMemberEventService {
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_MEMBER_UPDATE',
-			data: memberResponse,
+			data: {
+				...memberResponse,
+				guild_id: guildId.toString(),
+			},
 		});
 	}
 
 	async dispatchGuildMemberRemove({guildId, userId}: {guildId: GuildID; userId: UserID}): Promise<void> {
+		const userPartial = await this.userCacheService.getUserPartialResponse(userId, null as any);
 		await this.gatewayService.dispatchGuild({
 			guildId,
 			event: 'GUILD_MEMBER_REMOVE',
-			data: {user: {id: userId.toString()}},
+			data: {
+				guild_id: guildId.toString(),
+				user: userPartial || {id: userId.toString()},
+			},
 		});
 	}
 }

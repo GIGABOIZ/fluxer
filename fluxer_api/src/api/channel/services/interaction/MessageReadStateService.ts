@@ -6,10 +6,15 @@ import {dispatchChannelEvent} from '@app/api/channel/services/ChannelGatewayDisp
 import {ensureTextChannel, isOperationDisabled} from '@app/api/channel/services/message/MessageHelpers';
 import type {IGatewayService} from '@app/api/infrastructure/IGatewayService';
 import type {Channel} from '@app/api/models/Channel';
+import type {UserRepository} from '@app/api/user/repositories/UserRepository';
+import {mapUserToPartialResponse} from '@app/api/user/UserMappers';
 import {GuildOperations} from '@fluxer/constants/src/GuildConstants';
 
 export class MessageReadStateService {
-	constructor(private gatewayService: IGatewayService) {}
+	constructor(
+		private gatewayService: IGatewayService,
+		private userRepository?: UserRepository,
+	) {}
 	async startTyping({authChannel, userId}: {authChannel: AuthenticatedChannel; userId: UserID}): Promise<void> {
 		const {channel, guild} = authChannel;
 		ensureTextChannel(channel);
@@ -20,6 +25,29 @@ export class MessageReadStateService {
 	}
 
 	private async dispatchTypingStart({channel, userId}: {channel: Channel; userId: UserID}): Promise<void> {
+		let memberData: any = undefined;
+		let guildIdStr: string | undefined = undefined;
+		let userData: any = undefined;
+		if (channel.guildId) {
+			guildIdStr = channel.guildId.toString();
+			try {
+				const res = await this.gatewayService.getGuildMember({guildId: channel.guildId, userId});
+				if (res.success && res.memberData) {
+					memberData = res.memberData;
+				}
+			} catch {}
+		}
+		if (this.userRepository) {
+			try {
+				const u = await this.userRepository.findUnique(userId);
+				if (u) {
+					userData = mapUserToPartialResponse(u);
+					if (memberData && !memberData.user) {
+						memberData.user = userData;
+					}
+				}
+			} catch {}
+		}
 		await dispatchChannelEvent({
 			gatewayService: this.gatewayService,
 			channel,
@@ -28,6 +56,9 @@ export class MessageReadStateService {
 				channel_id: channel.id.toString(),
 				user_id: userId.toString(),
 				timestamp: Math.floor(Date.now() / 1000),
+				...(guildIdStr ? {guild_id: guildIdStr} : {}),
+				...(memberData ? {member: memberData} : {}),
+				...(userData ? {user: userData} : {}),
 			},
 		});
 	}

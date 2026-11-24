@@ -62,7 +62,7 @@ export class MessageInteractionService {
 			guildRepository,
 			gatewayService,
 		);
-		this.readStateService = new MessageReadStateService(gatewayService);
+		this.readStateService = new MessageReadStateService(gatewayService, userRepository);
 		this.pinService = new MessagePinService(
 			gatewayService,
 			channelRepository,
