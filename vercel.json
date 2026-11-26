@@ -3,27 +3,10 @@
   "version": 2,
   "buildCommand": "pnpm --filter fluxer_app build",
   "outputDirectory": "fluxer_app/dist",
-  "cleanUrls": true,
   "framework": null,
   "rewrites": [
     {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/web/(.*)",
-      "destination": "/web/$1"
-    },
-    {
-      "source": "/manifest.json",
-      "destination": "/manifest.json"
-    },
-    {
-      "source": "/sw.js",
-      "destination": "/sw.js"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!assets/|web/).*)",
       "destination": "/index.html"
     }
   ],
