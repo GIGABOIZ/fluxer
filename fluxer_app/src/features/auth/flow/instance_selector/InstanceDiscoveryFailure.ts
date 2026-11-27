@@ -18,11 +18,11 @@ export const INSTANCE_ADDRESS_INVALID_DESCRIPTOR = msg({
 		'Instance selector error shown when the typed address cannot be an address at all. Example instance domain is interpolated.',
 });
 const INSTANCE_UNREACHABLE_DESCRIPTOR = msg({
-	message: "Couldn't connect to a Fluxer instance at {domain}. Check the address and that the instance is online.",
-	comment: 'Instance selector error shown when no Fluxer instance answered at the address. Domain is interpolated.',
+	message: "Couldn't connect to a SYNC server at {domain}. Check the address and that the server is online.",
+	comment: 'Instance selector error shown when no SYNC instance answered at the address. Domain is interpolated.',
 });
 const INSTANCE_NEEDS_NEWER_CLIENT_DESCRIPTOR = msg({
-	message: '{domain} runs a newer version of Fluxer than this app. Update Fluxer, then try again.',
+	message: '{domain} runs a newer version of SYNC than this app. Update SYNC, then try again.',
 	comment:
 		'Instance selector error shown when the instance speaks a protocol generation this client does not know. Domain is interpolated.',
 });

@@ -10,6 +10,7 @@ import type {HonoApp, HonoEnv} from '@app/api/types/HonoEnv';
 import {AppErrorHandler, AppNotFoundHandler} from '@fluxer/errors/src/domains/core/ErrorHandlers';
 import {IpBannedError} from '@fluxer/errors/src/domains/moderation/IpBannedError';
 import {resolveErrorStatus} from '@fluxer/errors/src/error_handling/ErrorIntrospection';
+import {type CorsOrigins} from '@fluxer/hono/src/middleware/Cors';
 import {createMetricsMiddleware} from '@fluxer/hono/src/middleware/Metrics';
 import {LOCKED_DOWN_PERMISSIONS_POLICY, securityHeaders} from '@fluxer/hono/src/middleware/SecurityHeaders';
 import type {LoggerInterface} from '@fluxer/logger/src/LoggerInterface';
@@ -20,6 +21,8 @@ import {Hono} from 'hono';
 interface CreateAPIAppOptions extends ServiceSingletonDependencies {
 	config: APIConfig;
 	logger: LoggerInterface;
+	corsOrigins?: CorsOrigins;
+	mountApiPrefix?: boolean;
 	registerRoutes?: (routes: HonoApp) => void;
 }
 
@@ -47,7 +50,7 @@ export async function createAPIApp(options: CreateAPIAppOptions): Promise<APIApp
 	configureMiddleware(routes, {
 		logger,
 		nodeEnv: config.nodeEnv,
-		corsOrigins: [...config.endpoints.webAppOrigins, config.endpoints.marketing],
+		corsOrigins: options.corsOrigins ?? [...config.endpoints.webAppOrigins, config.endpoints.marketing],
 		trustClientIpHeader: config.proxy.trust_client_ip_header,
 		clientIpHeaderName: config.proxy.client_ip_header,
 		maxInflightRequests: config.maxInflightRequests,
@@ -67,6 +70,10 @@ export async function createAPIApp(options: CreateAPIAppOptions): Promise<APIApp
 			permissionsPolicy: LOCKED_DOWN_PERMISSIONS_POLICY,
 		}),
 	);
+	if (options.mountApiPrefix) {
+		app.route('/api/v1', routes);
+		app.route('/api', routes);
+	}
 	app.route('/v1', routes);
 	app.route('/', routes);
 	app.onError(TelemetryAwareAppErrorHandler);

@@ -793,6 +793,9 @@ export default () => {
 				'import.meta.env.MODE': JSON.stringify(mode),
 				'import.meta.env.BUILD_VERSION': JSON.stringify(buildInfo.version),
 				'import.meta.env.BUILD_CHANNEL': JSON.stringify(buildInfo.channel),
+				'import.meta.env.SYNC_BACKEND_URL': JSON.stringify(
+					envString('SYNC_BACKEND_URL', envString('FLUXER_BACKEND_URL', envString('PUBLIC_API_ENDPOINT', ''))),
+				),
 			}),
 			{
 				apply(compiler) {

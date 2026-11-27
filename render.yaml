@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: sync-backend
+    runtime: docker
+    dockerfilePath: ./deploy/sync-backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /_health
+    envVars:
+      - key: SYNC_DATA_DIR
+        value: /data
+      - key: SYNC_FRONTEND_URL
+        sync: false
+      - key: SYNC_BACKEND_URL
+        sync: false

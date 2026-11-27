@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {getConfiguredBackendOrigin} from '@app/features/app/config/BackendRuntimeOrigin';
 import {getActiveInstanceProductName} from '@app/features/app/state/ActiveInstanceProductName';
 import InstanceSnapshotStore, {type RuntimeConfigSnapshot} from '@app/features/app/state/InstanceSnapshotStore';
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
@@ -151,14 +152,11 @@ function useAuthRuntimeResolution<Runtime>(
 }
 
 function browserAuthDocumentOrigin(): string {
-	if (typeof window === 'undefined') {
-		throw new InvalidAuthDocumentLocationError('the document is unavailable');
+	try {
+		return getConfiguredBackendOrigin();
+	} catch (error) {
+		throw new InvalidAuthDocumentLocationError(error instanceof Error ? error.message : String(error));
 	}
-	const documentUrl = new URL(window.location.href);
-	if (documentUrl.protocol !== 'https:' && documentUrl.protocol !== 'http:') {
-		throw new InvalidAuthDocumentLocationError(`unsupported document protocol "${documentUrl.protocol}"`);
-	}
-	return documentUrl.origin;
 }
 
 async function resolveBrowserAuthRuntime(signal: AbortSignal): Promise<RuntimeConfigSnapshot> {

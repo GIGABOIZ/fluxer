@@ -22,7 +22,7 @@ import {PeerAddressMiddleware} from '@app/api/utils/RequestClientIp';
 import {embeddedWorkerStalledComponents} from '@app/api/worker/EmbeddedWorker';
 import {Headers as HttpHeaders} from '@fluxer/constants/src/Headers';
 import {InvalidApiOriginError} from '@fluxer/errors/src/domains/core/InvalidApiOriginError';
-import {cors} from '@fluxer/hono/src/middleware/Cors';
+import {type CorsOrigins, cors} from '@fluxer/hono/src/middleware/Cors';
 import {applyMiddlewareStack} from '@fluxer/hono/src/middleware/MiddlewareStack';
 import {createInfoRequestLogger, requestLogger} from '@fluxer/hono/src/middleware/RequestLogger';
 import {resolveClientIpHeaderName} from '@fluxer/ip_utils/src/ClientIp';
@@ -36,7 +36,7 @@ const WEB_HOST_ALLOWED_ORIGINS: ReadonlyMap<string, ReadonlySet<string>> = new M
 interface MiddlewarePipelineOptions {
 	logger: LoggerInterface;
 	nodeEnv: string;
-	corsOrigins: Array<string>;
+	corsOrigins: CorsOrigins;
 	trustClientIpHeader: boolean;
 	clientIpHeaderName?: string;
 	maxInflightRequests: number;

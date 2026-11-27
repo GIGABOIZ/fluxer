@@ -112,16 +112,21 @@ async function bootstrapDefaultAdmin() {
 		const users = getUserRepository();
 		const instanceConfig = getInstanceConfigRepository();
 		
+		const webAppBase = (process.env.SYNC_FRONTEND_URL || Config.endpoints.webApp || 'http://localhost:3000').replace(
+			/\/+$/,
+			'',
+		);
+
 		// Configure app branding to SYNC
 		await instanceConfig.setAppPublicConfig({
 			branding: {
 				product_name: 'SYNC',
 				premium_product_name: 'SYNC Pro',
-				icon_url: 'http://localhost:3000/assets/fluxer-logo-color.svg',
-				symbol_url: 'http://localhost:3000/assets/fluxer-logo-color.svg',
-				logo_url: 'http://localhost:3000/assets/fluxer-logo-color.svg',
-				wordmark_url: 'http://localhost:3000/assets/fluxer-wordmark.svg',
-				favicon_url: 'http://localhost:3000/assets/web/favicon-32x32.png',
+				icon_url: `${webAppBase}/web/android-chrome-512x512.png`,
+				symbol_url: `${webAppBase}/web/android-chrome-192x192.png`,
+				logo_url: `${webAppBase}/web/android-chrome-512x512.png`,
+				wordmark_url: null,
+				favicon_url: `${webAppBase}/web/favicon-32x32.png`,
 				favicon_dark_url: null,
 				status_page_url: null,
 				status_page_incident_history_url: null,
@@ -135,11 +140,11 @@ async function bootstrapDefaultAdmin() {
 			},
 			setup: {
 				configured: true,
-				admin_url: 'http://localhost:3000/admin',
+				admin_url: `${webAppBase}/admin`,
 			},
 			legal: {
-				terms_url: 'http://localhost:3000/terms',
-				privacy_url: 'http://localhost:3000/privacy',
+				terms_url: `${webAppBase}/terms`,
+				privacy_url: `${webAppBase}/privacy`,
 			},
 			registration: {
 				collect_date_of_birth: false,
@@ -1413,9 +1418,28 @@ async function backfillKlipyEmbeds(
 		}),
 	);
 
+	const configuredCorsOrigins = new Set<string>([
+		...Config.endpoints.webAppOrigins,
+		Config.endpoints.marketing,
+		...(process.env.SYNC_FRONTEND_URL ? [process.env.SYNC_FRONTEND_URL.replace(/\/+$/, '')] : []),
+		...(process.env.SYNC_CORS_ORIGINS ?? '')
+			.split(',')
+			.map((origin) => origin.trim().replace(/\/+$/, ''))
+			.filter(Boolean),
+	]);
+	const allowAllCors = process.env.SYNC_CORS_ALLOW_ALL === 'true';
+	const corsOriginMatcher = allowAllCors
+		? ('*' as const)
+		: (origin: string) =>
+				configuredCorsOrigins.has(origin) ||
+				/^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin) ||
+				/^https:\/\/sync-app(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
+
 	const { app, initialize } = await createAPIApp({
 		config: Config,
 		logger: Logger,
+		corsOrigins: corsOriginMatcher,
+		mountApiPrefix: true,
 		operatorPassWallPublisher: new NoopOperatorPassWallPublisher(),
 	});
 
@@ -1620,10 +1644,11 @@ async function backfillKlipyEmbeds(
 	await bootstrapDefaultAdmin();
 	await backfillKlipyEmbeds(persistentExecutor, devUnfurler);
 
-	const port = 8080;
-	const server = createServer(app, { port });
+	const port = Number(process.env.PORT || process.env.FLUXER_PORT || 8080);
+	const hostname = process.env.HOST || (process.env.PORT ? '0.0.0.0' : '127.0.0.1');
+	const server = createServer(app, { port, hostname });
 	setupGatewayWebSocket(server);
-	Logger.info(`[SYNC Backend] Fluxer API listening on http://127.0.0.1:${port}`);
+	Logger.info(`[SYNC Backend] API listening on http://${hostname}:${port}`);
 }
 
 start().catch((err) => {

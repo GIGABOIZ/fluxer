@@ -828,7 +828,7 @@ export function SyncControlPanel(): React.JSX.Element {
 								</div>
 								<div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '12px'}}>
 									<span style={{color: '#71717a'}}>API Version:</span>
-									<span style={{fontFamily: 'monospace', color: '#a1a1aa'}}>Fluxer API v1 (Code Version 1)</span>
+									<span style={{fontFamily: 'monospace', color: '#a1a1aa'}}>SYNC API v1 (Code Version 1)</span>
 								</div>
 								<div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '12px'}}>
 									<span style={{color: '#71717a'}}>Password Security Standard:</span>

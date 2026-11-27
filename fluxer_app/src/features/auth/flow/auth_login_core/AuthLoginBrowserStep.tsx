@@ -56,20 +56,20 @@ const OPEN_BROWSER_AGAIN_DESCRIPTOR = msg({
 	comment: 'Button in the desktop app that reopens the browser sign-in page while the app waits for the browser.',
 });
 const BROWSER_WAIT_STOPPED_DESCRIPTOR = msg({
-	message: "Fluxer stopped checking whether the browser approved this sign-in. It didn't lose your code.",
+	message: "SYNC stopped checking whether the browser approved this sign-in. It didn't lose your code.",
 	comment: 'Status shown when browser sign-in status polling gives up after repeated failures.',
 });
 const BROWSER_WAIT_UNREACHABLE_DESCRIPTOR = msg({
 	message:
-		'Fluxer couldn\'t connect to {instanceName} to check whether your browser approved this sign-in. Check your connection, then select "Try again".',
+		'SYNC couldn\'t connect to {instanceName} to check whether your browser approved this sign-in. Check your connection, then select "Try again".',
 	comment:
-		'Status shown in the desktop app when it stopped checking the browser sign-in because the instance could not be reached. instanceName is the server name, such as Fluxer. "Try again" is the label of the button below and must match its translation.',
+		'Status shown in the desktop app when it stopped checking the browser sign-in because the instance could not be reached. instanceName is the server name, such as SYNC. "Try again" is the label of the button below and must match its translation.',
 });
 const BROWSER_WRONG_APP_HINT_DESCRIPTOR = msg({
 	message:
-		'If the link opens a different Fluxer app, select "Signing in on another device?" and type the code in your browser instead.',
+		'If the link opens a different SYNC app, select "Signing in on another device?" and type the code in your browser instead.',
 	comment:
-		'Hint in the desktop app while it waits for the browser, for people with more than one Fluxer app installed. "Signing in on another device?" is the label of the button below and must match its translation.',
+		'Hint in the desktop app while it waits for the browser, for people with more than one SYNC app installed. "Signing in on another device?" is the label of the button below and must match its translation.',
 });
 const BROWSER_HANDOFF_UNSUPPORTED_INSTANCE_DESCRIPTOR = msg({
 	message: '{instanceName} does not publish a web address, so sign-in cannot be handed to a browser.',

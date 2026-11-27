@@ -47,6 +47,7 @@ declare global {
 		readonly PROD: boolean;
 		readonly BUILD_VERSION?: string;
 		readonly BUILD_CHANNEL?: 'stable' | 'canary' | 'development';
+		readonly SYNC_BACKEND_URL?: string;
 	}
 	interface ImportMetaHot {
 		readonly data: Record<string, unknown>;

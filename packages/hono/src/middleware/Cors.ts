@@ -2,9 +2,11 @@
 
 import type {Context, MiddlewareHandler} from 'hono';
 
+export type CorsOrigins = Array<string> | '*' | ((origin: string) => boolean);
+
 export interface CorsOptions {
 	enabled?: boolean;
-	origins?: Array<string> | '*';
+	origins?: CorsOrigins;
 	methods?: Array<string>;
 	allowedHeaders?: Array<string>;
 	exposedHeaders?: Array<string>;
@@ -39,10 +41,12 @@ export function cors(options: CorsOptions = {}): MiddlewareHandler {
 			return;
 		}
 		const requestOrigin = c.req.header('origin');
+		const matchesOrigin = (origin: string): boolean =>
+			typeof origins === 'function' ? origins(origin) : Array.isArray(origins) && origins.includes(origin);
 		const applyCorsHeaders = () => {
 			if (origins === '*') {
 				c.header('Access-Control-Allow-Origin', '*');
-			} else if (Array.isArray(origins) && requestOrigin && origins.includes(requestOrigin)) {
+			} else if (requestOrigin && matchesOrigin(requestOrigin)) {
 				c.header('Access-Control-Allow-Origin', requestOrigin);
 			}
 			if (credentials) {

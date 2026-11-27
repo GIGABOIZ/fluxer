@@ -3,6 +3,7 @@
 import 'urlpattern-polyfill';
 import {bootstrapSyntheticHistory} from '@app/app/HistoryBootstrap';
 import reactiveI18n, {initI18n} from '@app/app/I18n';
+import {getConfiguredBackendOrigin} from '@app/features/app/config/BackendRuntimeOrigin';
 import {AppErrorBoundary} from '@app/features/app/components/AppErrorBoundary';
 import {ErrorFallback} from '@app/features/app/components/ErrorFallback';
 import type {DomainMigrationSide} from '@app/features/app/domain_migration/DomainMigrationCore';
@@ -145,7 +146,7 @@ async function activateSignedOutDocumentInstance(): Promise<void> {
 			return;
 		}
 		const resolution = await RuntimeConfig.resolveEndpoint({
-			input: window.location.origin,
+			input: getConfiguredBackendOrigin(),
 			signal: AbortSignal.timeout(SIGNED_OUT_INSTANCE_DISCOVERY_TIMEOUT_MS),
 		});
 		if (RuntimeConfig.getSnapshotOrNull() === null) {

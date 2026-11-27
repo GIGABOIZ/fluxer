@@ -3,6 +3,7 @@
 	"private": true,
 	"scripts": {
 		"vercel-build": "pnpm --filter fluxer_app build",
+		"start:backend": "pnpm --filter fluxer_api start:sync",
 		"build": "cargo run -p fluxer-dev -- build",
 		"dev": "cargo run -p fluxer-dev -- dev",
 		"dev:bootstrap": "cargo run -p fluxer-dev -- bootstrap",
